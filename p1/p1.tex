@@ -1,0 +1,458 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Programming/Coding Assignment
+% LaTeX Template
+%
+% This template has been downloaded from:
+% http://www.latextemplates.com
+%
+% Original author:
+% Ted Pavlic (http://www.tedpavlic.com)
+%
+% Note:
+% The \lipsum[#] commands throughout this template generate dummy text
+% to fill the template out. These commands should all be removed when 
+% writing assignment content.
+%
+% This template uses a Perl script as an example snippet of code, most other
+% languages are also usable. Configure them in the "CODE INCLUSION 
+% CONFIGURATION" section.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+% PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass{article}
+
+\usepackage{fancyhdr} % Required for custom headers
+\usepackage{lastpage} % Required to determine the last page for the footer
+\usepackage{extramarks} % Required for headers and footers
+\usepackage[usenames,dvipsnames]{color} % Required for custom colors
+\usepackage{graphicx} % Required to insert images
+\usepackage{subcaption}
+\usepackage{listings} % Required for insertion of code
+\usepackage{courier} % Required for the courier font
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+\usepackage{float}
+
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+% Margins
+\topmargin=-0.45in
+\evensidemargin=0in
+\oddsidemargin=0in
+\textwidth=6.5in
+\textheight=9.0in
+\headsep=0.25in
+
+\linespread{1.1} % Line spacing
+
+% Set up the header and footer
+\pagestyle{fancy}
+\lhead{\hmwkAuthorName} % Top left header
+\chead{\hmwkClass\ (\hmwkClassTime): \hmwkTitle} % Top center head
+%\rhead{\firstxmark} % Top right header
+\lfoot{\lastxmark} % Bottom left footer
+\cfoot{} % Bottom center footer
+\rfoot{Page\ \thepage\ of\ \protect\pageref{LastPage}} % Bottom right footer
+\renewcommand\headrulewidth{0.4pt} % Size of the header rule
+\renewcommand\footrulewidth{0.4pt} % Size of the footer rule
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+%----------------------------------------------------------------------------------------
+% CODE INCLUSION CONFIGURATION
+%----------------------------------------------------------------------------------------
+
+\definecolor{MyDarkgreen}{rgb}{0.0,0.4,0.0} % This is the color used for comments
+\lstloadlanguages{Perl} % Load Perl syntax for listings, for a list of other languages supported see: ftp://ftp.tex.ac.uk/tex-archive/macros/latex/contrib/listings/listings.pdf
+\lstset{language=Perl, % Use Perl in this example
+        frame=single, % Single frame around code
+        basicstyle=\small\ttfamily, % Use small true type font
+        keywordstyle=[1]\color{blue}\bf, % Perl functions bold and blue
+        keywordstyle=[2]\color{Purple}, % Perl function arguments purple
+        keywordstyle=[3]\color{blue}\underbar, % Custom functions underlined and blue
+        identifierstyle=, % Nothing special about identifiers                                         
+        commentstyle=\usefont{T1}{pcr}{m}{sl}\color{MyDarkgreen}\small, % Comments small dark green courier font
+        stringstyle=\color{Purple}, % Strings are purple
+        showstringspaces=false, % Don't put marks in string spaces
+        tabsize=5, % 5 spaces per tab
+        %
+        % Put standard Perl functions not included in the default language here
+        morekeywords={rand},
+        %
+        % Put Perl function parameters here
+        morekeywords=[2]{on, off, interp},
+        %
+        % Put user defined functions here
+        morekeywords=[3]{test},
+        %
+        morecomment=[l][\color{blue}]{...}, % Line continuation (...) like blue comment
+        numbers=left, % Line numbers on left
+        firstnumber=1, % Line numbers start with line 1
+        numberstyle=\tiny\color{blue}, % Line numbers are blue and small
+        stepnumber=5 % Line numbers go in steps of 5
+}
+
+% Creates a new command to include a perl script, the first parameter is the filename of the script (without .pl), the second parameter is the caption
+\newcommand{\perlscript}[2]{
+\begin{itemize}
+\item[]\lstinputlisting[caption=#2,label=#1]{#1.pl}
+\end{itemize}
+}
+
+%----------------------------------------------------------------------------------------
+% DOCUMENT STRUCTURE COMMANDS
+% Skip this unless you know what you're doing
+%----------------------------------------------------------------------------------------
+
+% Header and footer for when a page split occurs within a problem environment
+\newcommand{\enterProblemHeader}[1]{
+%\nobreak\extramarks{#1}{#1 continued on next page\ldots}\nobreak
+%\nobreak\extramarks{#1 (continued)}{#1 continued on next page\ldots}\nobreak
+}
+
+% Header and footer for when a page split occurs between problem environments
+\newcommand{\exitProblemHeader}[1]{
+%\nobreak\extramarks{#1 (continued)}{#1 continued on next page\ldots}\nobreak
+%\nobreak\extramarks{#1}{}\nobreak
+}
+
+\setcounter{secnumdepth}{0} % Removes default section numbers
+\newcounter{homeworkProblemCounter} % Creates a counter to keep track of the number of problems
+\setcounter{homeworkProblemCounter}{-1}
+
+\newcommand{\homeworkProblemName}{}
+\newenvironment{homeworkProblem}[1][Part \arabic{homeworkProblemCounter}]{ % Makes a new environment called homeworkProblem which takes 1 argument (custom name) but the default is "Problem #"
+\stepcounter{homeworkProblemCounter} % Increase counter for number of problems
+\renewcommand{\homeworkProblemName}{#1} % Assign \homeworkProblemName the name of the problem
+\section{\homeworkProblemName} % Make a section in the document with the custom problem count
+\enterProblemHeader{\homeworkProblemName} % Header and footer within the environment
+}{
+\exitProblemHeader{\homeworkProblemName} % Header and footer after the environment
+}
+
+\newcommand{\problemAnswer}[1]{ % Defines the problem answer command with the content as the only argument
+\noindent\framebox[\columnwidth][c]{\begin{minipage}{0.98\columnwidth}#1\end{minipage}} % Makes the box around the problem answer and puts the content inside
+}
+
+\newcommand{\homeworkSectionName}{}
+\newenvironment{homeworkSection}[1]{ % New environment for sections within homework problems, takes 1 argument - the name of the section
+\renewcommand{\homeworkSectionName}{#1} % Assign \homeworkSectionName to the name of the section from the environment argument
+\subsection{\homeworkSectionName} % Make a subsection with the custom name of the subsection
+\enterProblemHeader{\homeworkProblemName\ [\homeworkSectionName]} % Header and footer within the environment
+}{
+\enterProblemHeader{\homeworkProblemName} % Header and footer after the environment
+}
+
+%----------------------------------------------------------------------------------------
+% NAME AND CLASS SECTION
+%----------------------------------------------------------------------------------------
+
+\newcommand{\hmwkTitle}{Assignment\ \#1} % Assignment title
+\newcommand{\hmwkDueDate}{Saturday,\ January\ 24,\ 2016} % Due date
+\newcommand{\hmwkClass}{CSC320} % Course/class
+\newcommand{\hmwkClassTime}{L5101} % Class/lecture time
+\newcommand{\hmwkAuthorName}{Maxwell Huang-Hobbs} % Your name
+
+%----------------------------------------------------------------------------------------
+% TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+
+\title{
+\vspace{2in}
+\textmd{\textbf{\hmwkClass:\ \hmwkTitle}}\\
+\normalsize\vspace{0.1in}\small{Due\ on\ \hmwkDueDate}\\
+\vspace{0.1in}
+\vspace{3in}
+}
+
+\author{\textbf{\hmwkAuthorName}}
+%\date{} % Insert date here if you want it to appear below your name
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle
+\clearpage
+%----------------------------------------------------------------------------------------
+% PROBLEM 0 \
+%----------------------------------------------------------------------------------------
+
+% To have just one problem per page, simply put a \clearpage after each problem
+
+\begin{homeworkProblem}
+
+\noindent \textit{Dataset description}
+\parindent=1pt
+
+The dataset consists of groups of of inverted black and white photo negatives 
+taken through different colored lenses and from similar angles. The lenses used
+to take these photos are red, green, and blue lenses, in order to isolate the 
+different primary colors of light.
+
+These groups of photos are arranged vertically in the same image file, 
+surrounded by a near-black border from the film negative, and a perfect white 
+(RGB 255, 255, 255) border around that.
+
+\begin{figure*}[h]
+  \centering
+    \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.25]{raw/raw_0.jpg}
+      \label{fig:sfig_samples_1}
+    \end{subfigure}
+    \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.25]{raw/raw_4.jpg}
+        \label{fig:sfig_samples_2}
+    \end{subfigure}
+  \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.25]{raw/raw_3.jpg}
+        \label{fig:sfig_samples_3}
+    \end{subfigure}
+    \caption{Examples of images from the dataset}
+    \label{fig:samples}
+\end{figure*}
+
+The absolute positions of the images vary from image to image, but they are 
+always  arranged in the order (blue, green, red), from top to bottom.
+
+Lastly, the large png images in the dataset have much greater color depth than 
+the jpg images, and each value corresponds roughly to 256 times the equivalent
+value in one of the jpg encoded images.
+
+
+\end{homeworkProblem}
+\clearpage
+
+
+
+
+%----------------------------------------------------------------------------------------
+% Part 1: NCC versus SSD
+%----------------------------------------------------------------------------------------
+
+\begin{homeworkProblem}
+\noindent \textit{Small scale image composition}
+
+\subsection{Image Cropping Algorithm}
+The image cropping algorithm attempts to find the inverted negatives within the
+image by looking for blocks of known colors. It depends on the following
+assumptions:
+
+\begin{enumerate}
+\item The areas between and around the subimages are entirely, or nearly, black.
+\item There is little to no horizontal displacement between the three subimages.
+\item There are only three subimages, divided at approximately $\frac{1}{3}$ and
+$\frac{2}{3}$ of the height of the image.
+\item There is a significant value difference between the end of the border and 
+the beginning of the image.
+\end{enumerate}
+
+The algorithm works as follows:
+
+\begin{enumerate}
+\item 
+The white border is cropped out of the image by scanning inward from the edges 
+of the image, looking for the point when a sampled color value is not within
+a specified threshold of pure white. those values are averaged on each side and
+used to determine the cropping rectangle of the internal black image.
+\item
+the external black border is removes by scanning inward in a manner similar to 
+the one used in step 1. However, positions where no significant color difference
+is encountered within a specified threshold are recorded and put aside, to be 
+referred to as "cuts".
+\item 
+The horizontal cuts generated by scanning the left and right sides of the image 
+are then consolidated by grouping together like values within a given range, 
+and the resulting groups are considered as candidates for a strip through the
+image. Two cuts are then selected based on their closeness to $\frac{1}{3}$ and 
+$\frac{2}{3}$, and are considered the borders between the subimages.
+\item
+The coordinates of the black border bounding box and the cuts are then used to 
+crop out each of the subimages.
+\end{enumerate}
+
+This algorithm performs decently when each of the specified assumptions is met.
+However, on images where one or more of the assumptions was violated, it leads 
+to undesirable cropping. In the future, this could be improved by adding sanity
+checks for image height, and by defaulting to a $\frac{1}{3}, \frac{2}{3}$ crop 
+in those situations. Moreover, this system of cuts and borders is somewhat
+unweidly, and could perhaps be replaced by averaging the values of various rows
+and columns of the array.
+
+\begin{figure*}[h!]
+  \centering
+    \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.1]{raw/raw_0.jpg}
+    \end{subfigure}
+    \begin{subfigure}{.15\textwidth}
+    \centering
+      \includegraphics[scale=0.15]{crop/crop_0_b.png}
+  \end{subfigure}
+  \begin{subfigure}{.15\textwidth}
+    \centering
+      \includegraphics[scale=0.15]{crop/crop_0_g.png}
+    \end{subfigure}
+  \begin{subfigure}{.15\textwidth}
+    \centering 
+      \includegraphics[scale=0.15]{crop/crop_0_r.png}
+    \end{subfigure}
+    \caption{Example of a poor crop. The large dark patch accross the blue
+              channel causes it to register as a cut.}
+    \label{fig:bad_crop}
+\end{figure*}
+
+
+\subsection{Comparison of Results (SSD versus NCC)}
+
+
+Both the Sum of Squared Differences (SSD) and Normalized Cross Correlation (NCC)
+performed well on images with little variation between the intensities of their
+color channels, as is visible in figures 
+\ref{fig:comparasin_similar_1} and \ref{fig:comparasin_similar_2}.
+
+
+\begin{figure*}[h]
+  \centering
+    \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.1]{raw/raw_5.jpg}
+        \caption{The unprocessed image}
+    \end{subfigure}
+    \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.25]{ssd/out_ssd_5.png}
+    \caption{The output of SSD}
+\end{subfigure}
+  \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.25]{ncc/out_ncc_5.png}
+        \caption{The output of NCC}
+    \end{subfigure}
+    \caption{Comparison of NCC and SSD on the same image with similar results}
+    \label{fig:comparasin_similar_1}
+\end{figure*}
+
+\begin{figure*}[h]
+  \centering
+    \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.1]{raw/raw_1.jpg}
+        \caption{The unprocessed image}
+    \end{subfigure}
+    \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.25]{ssd/out_ssd_1.png}
+    \caption{The output of SSD}
+\end{subfigure}
+  \begin{subfigure}{.3\textwidth}
+    \centering
+      \includegraphics[scale=0.25]{ncc/out_ncc_1.png}
+        \caption{The output of NCC}
+    \end{subfigure}
+    \caption{Another comparison of NCC and SSD and SSD on the same
+             image with similar results}
+    \label{fig:comparasin_similar_2}
+\end{figure*}
+
+
+However, NCC outperformed SSD when the average value of one channel was 
+significantly different than the value of another channel.
+
+
+
+\begin{figure*}[h]
+
+  \centering
+  \begin{subfigure}{.3\textwidth}
+    \centering
+    \includegraphics[scale=0.1]{raw/raw_6.jpg}
+    \caption{The unprocessed image}
+  \end{subfigure}
+  \begin{subfigure}{.3\textwidth}
+    \centering
+    \includegraphics[scale=0.25]{ssd/out_ssd_6.png}
+    \caption{The output of SSD}
+  \end{subfigure}
+  \begin{subfigure}{.3\textwidth}
+    \centering
+    \includegraphics[scale=0.25]{ncc/out_ncc_6.png}
+    \caption{The output of NCC}
+  \end{subfigure}
+
+  \centering
+  \caption{An example of where SSD is outperformed by NCC. The mainly blue 
+            hues of the painting mean that the red and green channels are 
+            significantly different in value than the blue channel of the image,
+            and so the Sum of Squared Differences becomes a less accurate 
+            measure of likeness in image positioning}
+  \label{fig:comparasin_similar_2}
+\end{figure*}
+
+\end{homeworkProblem}
+\clearpage
+
+
+
+
+%----------------------------------------------------------------------------------------
+% Part 2: Image Re-sizing
+%----------------------------------------------------------------------------------------
+
+\begin{homeworkProblem}
+\noindent \textit{Resizing large images}
+
+The image resizing algorithm is relatively simple, though not very robust:
+
+\begin{enumerate}
+\item If an image is larger than 400 pixels across,
+      a downscaled copy is created at 400px wide.
+\item The downscaled copy  is scored with NCC.
+\item The original imgage is then scored again, over a range of values 
+      corresponding to the optimal displacements of the downscaled image.
+
+\end{enumerate}
+
+\begin{figure*}[h]
+    \centering
+  \includegraphics[scale=0.1]{big/out_ncc_11.png}
+  \includegraphics[scale=0.1]{big/out_ncc_13.png}
+    \caption{Examples of large images processed in this manner}
+    \label{fig:lg_images}
+\end{figure*}
+
+
+The runtime of this algorithm could be improved dramatically if it were made to 
+use a Gaussian Pyramid (i.e. downsize by factors of two multiple times up to a 
+threshold). Be that as it may, it is already a large step up from the naive 
+approach, in which no scaling whatsoever is done.
+
+
+\begin{figure*}[h!]
+    \centering
+    \includegraphics[scale=0.4]{charts/runtime_graph.png}
+    \caption{Runtime of processing a large image, with and without scaling.}
+    \label{fig:lg_images}
+\end{figure*}
+
+\end{homeworkProblem}
+
+\section{Acknowledgements}
+\textbf{Alexander Biggs}, for pointing me onto a cleaner and more efficient way
+to crop the images. If only we head talked about it earlier in the assignment 
+period, these runtimes could have been improved significantly.\\
+
+\clearpage
+
+
+%----------------------------------------------------------------------------------------
+
+\end{document}

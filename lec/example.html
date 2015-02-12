@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="file:////usr/share/uberwriter/media/uberwriter.css" type="text/css" />
+  <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<h1 id="csc320-lecture-5">CSC320 Lecture 5</h1>
+<p>faces and face spaces</p>
+<h1 id="faces-and-face-spaces">Faces and Face Spaces</h1>
+<p>Look at the set of n-dimensional vectors that makes up all images of a given size and shape, There exists some subset of those vectors which are “images of faces”</p>
+<p>Each face image is a point in n-dimensional space. We take a large sample of these faces, and attempt to find a the basis of the subspace that approximates that set of points.</p>
+<p>This is the so-called “Face-Space”</p>
+<p>Because subspaces are always centred about the origin, we offset the entire space by some set amount (usually the average of the sample face points).</p>
+<h3 id="change-of-basis-projection">Change of basis / Projection</h3>
+<p>a basis: - a new basis <span class="math">\((V_1, V_2)\)</span> - <span class="math">\(Projection_X = (X \dot V_1) V_1 + (X \dot V_2) V_2\)</span> - THIS IS IMPORTANT</p>
+<p>In 2 dimensions, the projection of a point upon a line is the closest point on that line to the point. Therefore, the distance between the projection of the point onto the line and the point itself is the shortest distance from the point to that line.</p>
+<p>In order to determine if a point is a face, we set some threshold as “close enough to the face-space to be considered a face”</p>
+<p>This same principle can be applied along N dimensions</p>
+<h2 id="face-detection-using-pca-formalized">Face Detection using PCA, Formalized</h2>
+<ul>
+<li>For each (centered) window x and for a set of principal components V, compute the Euclidian distance <span class="math">\(|VV^T x - x|\)</span>
+<ul>
+<li>That is the distance betwen the reconstuction of c and c. The reconstruction of x is similar to x if x lies in the face subspace.</li>
+<li>The reconstruction of x is the closest space in the face subspace to x</li>
+</ul></li>
+<li>Win: instead of comparing x to a large dataset of faces, we are only comparing x to the columns of V
+<ul>
+<li><span class="math">\(V^T_x\)</span> is just a vector of the dot products <span class="math">\(v_i \dot x\)</span> for every I</li>
+<li>That still works, since V contains (we hope) all the information about the appearance of the face</li>
+</ul></li>
+</ul>
+<h2 id="nonlinear-methods">Nonlinear Methods</h2>
+<p>Not all spaces can be accurately summarized by a linear approximation. However, these same basic techniques (trendline + difference) apply to nonlinear trends.</p>
+<p>We’re not going into detail on those</p>
+<h1 id="a-little-bit-of-math">A LITTLE BIT OF MATH</h1>
+<h2 id="polar-coordinates">POLAR COORDINATES</h2>
+<p>you sure do remember this from highschool (a,b) in cartesian coordinates is (t, r) where a = r cos(t), b= r sin(t)</p>
+<h2 id="imaginary-numbers-and-polar-coordinates">IMAGINARY NUMBERS AND POLAR COORDINATES</h2>
+<p>r(cos(t) + i sin(t)) = r e^{i t} = e^{log r + i t} where t is theta</p>
+<h1 id="fourier-transforms">Fourier Transforms</h1>
+<p>(almost) Any univariate function can be written as a weighted sum of sines and cosines at different frequencies</p>
+<p>This is called the Fourier series for a function. It’s usually an infinite series.</p>
+<p>The “coarse” structure is encoded with long wavelength sine waves, the “fine” structure is encoded with short wavelength waves.</p>
+<p>Note: <span class="math">\(F(w) = F(\omega)\)</span></p>
+<p><span class="math">\(f(x) - Fourier Transform -&gt; F(w)\)</span><br />where <span class="math">\(f(x) = \sum_{w=0}^{\inf}{A sin(wx + \phi)}\)</span><br />and <span class="math">\(f(w)\)</span> holds the amplitude <span class="math">\(A\)</span> and phase <span class="math">\(\phi\)</span> of the corresponding sine. where <span class="math">\(F(w) = R(w) +iI(w)\)</span> <span class="math">\(A = += \sqrt{R(w)^2 + I(w)^2}\)</span>, <span class="math">\(\phi = tan^-1 \frac{I(w)}{R(w)}\)</span></p>
+<p>Usually, Frequency is more interesting than Phase</p>
+</body>
+</html>
