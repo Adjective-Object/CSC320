@@ -13,6 +13,7 @@ import matplotlib.cbook as cbook
 
 import random
 import time
+import math
 
 import matplotlib.image as mpimg
 import scipy as sci
@@ -271,6 +272,82 @@ def clipped_stroke(image, canvas, edgels, radius=3, halfLen=30):
                    endpoint1, endpoint2,
                    colour, radius)
 
+###########################################################
+## Part 5:
+##   Orienting clipped strokes based on local derivative 
+##   of image (by value)
+##
+###########################################################
+
+def oriented_stroke(image, canvas, edgels, derivatives, radius=3, halfLen=10):
+    center = unfilled_coordinate(canvas)
+
+    # Grab colour from image at center position of the stroke.
+    colour = np.reshape(image[center[1] - 1, center[0] - 1, :], (3, 1))
+
+    if edgels[center[1] - 1, center[0] - 1]:
+        return paintStroke(canvas, indices_x, indices_y, center, center,
+                           colour, radius)
+    
+    #diff = derivatives[center[1], center[0]]    
+    diff = np.array([derivatives[center[1], center[0], 1],
+            derivatives[center[1], center[0], 0]])
+
+    endpoint1 = walk_from(center, canvas, edgels, 
+                          diff, halfLen)
+    endpoint2 = walk_from(center, canvas, edgels, 
+                          -diff, halfLen)
+    
+    return paintStroke(canvas, indices_x, indices_y,
+               endpoint1, endpoint2,
+               colour, radius)
+
+
+###########################################################
+## Part 6:
+##   Adding random variations to the color, angle, radius, 
+##   and intensity(jk not really?) while painting
+##
+###########################################################
+
+
+def random_oriented_stroke(image, canvas, edgels, derivatives, 
+                           radius=3, halfLen=10, 
+                           colorRange=(-15.0/255, 15.0/255), 
+                           angleRange=(-15.0/360*2*math.pi, 15.0/360*2*math.pi),
+                           radRange=(-0.5,0.5)):
+    center = unfilled_coordinate(canvas)
+
+    # Grab colour from image at center position of the stroke.
+    colour = np.reshape(image[center[1] - 1, center[0] - 1, :], (3, 1))
+    colour = (colour[0] + random.uniform(*colorRange),
+              colour[1] + random.uniform(*colorRange),
+              colour[2] + random.uniform(*colorRange))
+
+    if edgels[center[1] - 1, center[0] - 1]:
+        return paintStroke(canvas, indices_x, indices_y, center, center,
+                           colour, radius)
+     
+    diff = derivatives[center[1], center[0] , ::-1]
+    """
+    theta = math.atan2(diff[0], diff[1])
+    theta = theta + random.uniform(*angleRange)
+    diff = np.array([sin(theta), cos(theta)])
+    """
+
+    endpoint1 = walk_from(center, canvas, edgels, 
+                           diff, halfLen)
+    endpoint2 = walk_from(center, canvas, edgels, 
+                          -diff, halfLen)
+    
+    return paintStroke(canvas, indices_x, indices_y,
+               endpoint1, endpoint2,
+               colour, radius # + random.uniform(*radRange)
+               )
+
+
+
+
 ################################
 ## Options and main loop logic #
 ################################
@@ -309,8 +386,9 @@ def main():
     global indices_x, indices_y
 
     #should_paint, canny_clip, paint = parse_opts();
-    should_paint, paint = has_unpainted_regions, clipped_stroke
+    should_paint, paint = has_unpainted_regions, random_oriented_stroke
     canny_clip = True
+    should_oriented_stroke = True
     test_edgels = False
 
     # Read image and convert it to double, and scale each R,G,B
@@ -344,9 +422,15 @@ def main():
     canny_edgels = None
     if canny_clip:
         canny_edgels = compute_canny_edgels(imRGB)
+    
+    if should_oriented_stroke:
+        imIntensity = intensityImg(imRGB)
+        derivatives = yx_derivatives(imIntensity)
 
-    while should_paint(canvas):
+    while should_paint(canvas) and k < 1000:
         paint_args = (imRGB, canvas, canny_edgels) if canny_clip else (imRGB, canvas)
+        if should_oriented_stroke:
+            paint_args = (imRGB, canvas, canny_edgels, derivatives)
         canvas = paint(*paint_args)
 
         k += 1
@@ -354,6 +438,7 @@ def main():
 
     print("done!")
     time.time()
+
 
     canvas[canvas < 0] = 0.0
     plt.clf()

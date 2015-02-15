@@ -7,7 +7,7 @@ Author: Vishwanath
 contact: vishwa.hyd@gmail.com
 '''
 try:
-    import Image
+    from PIL import Image
 except ImportError:
     print('PIL not found. You cannot view the image')
 import os
@@ -16,6 +16,53 @@ import numpy as np
 from scipy import *
 from scipy.ndimage import *
 from scipy.signal import convolve2d as conv
+
+def intensityImg(im):
+    
+    intensities = im[:,:,0] * 0.30 + im[:,:,1] * 0.59 + im[:,:,2] * 0.11
+
+    #normalize color intensities
+    intensities = intensities / np.max(intensities)
+    
+    return intensities
+
+def yx_derivatives(im, sigma=4):    
+    
+    # Create the gauss kernel for blurring the input image
+    # It will be convolved with the image
+    # wsize should be an odd number
+    wsize = 5
+    gausskernel = gaussFilter(sigma, window = wsize)
+
+    # fx is the filter for vertical gradient
+    # fy is the filter for horizontal gradient
+    # Please not the vertical direction is positive X
+    fx = createFilter([0,  1, 0,
+                       0,  0, 0,
+                       0, -1, 0])
+    fy = createFilter([ 0, 0, 0,
+                       -1, 0, 1,
+                        0, 0, 0])
+
+    imblurred = conv(im, gausskernel, 'same')
+    # print "imout:", imout.shape
+    gradx = conv(imblurred, fx, 'same')
+    grady = conv(imblurred, fy, 'same')
+
+    # Create the output array 
+    # (3d array of y, x, (y,x pair of immediate derivative))
+    points_shape = im.shape
+    points_shape = (points_shape[0], points_shape[1], 2)
+    points = np.empty(points_shape)
+    
+    points[:,:,0] = grady
+    points[:,:,1] = gradx
+    
+    return points
+    
+    
+    
+
 
 def canny(im, sigma, thresHigh = 50,thresLow = 10):
     '''
