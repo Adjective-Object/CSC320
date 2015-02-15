@@ -320,9 +320,9 @@ def random_oriented_stroke(image, canvas, edgels, derivatives,
 
     # Grab colour from image at center position of the stroke.
     colour = np.reshape(image[center[1] - 1, center[0] - 1, :], (3, 1))
-    colour = (colour[0] + random.uniform(*colorRange),
-              colour[1] + random.uniform(*colorRange),
-              colour[2] + random.uniform(*colorRange))
+    colour = (  max(0, min(1, colour[0] + random.uniform(*colorRange) )),
+                max(0, min(1, colour[1] + random.uniform(*colorRange) )),
+                max(0, min(1, colour[2] + random.uniform(*colorRange) )))
 
     if edgels[center[1] - 1, center[0] - 1]:
         return paintStroke(canvas, indices_x, indices_y, center, center,
