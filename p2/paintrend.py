@@ -31,6 +31,16 @@ from painters import *
 ## Options and main loop logic #
 ################################
 
+
+
+def colourImSave(filename, array):
+    imArray = imresize(array, 3., 'nearest')
+    if (len(imArray.shape) == 2):
+        imsave(filename, cm.jet(imArray))
+    else:
+        imsave(filename, imArray)
+
+
 def print_helptext():
     debug("usage: 'paintend.py -p [version]'")
     debug("    where [version] is one of p1, 1, p2, 2 ... p6, 6")
@@ -96,7 +106,7 @@ def main():
     k = 0
 
     # paint over the image
-    while painter.should_paint():
+    while painter.should_paint() and k<5000:
         painter.do_paint();
 
         k += 1
@@ -114,7 +124,7 @@ def main():
     plt.axis('off')
     plt.imshow(canvas)
     plt.pause(3)
-    colorImSave('output.png', canvas)
+    colourImSave('output.png', canvas)
 
 
 if __name__ == "__main__":
