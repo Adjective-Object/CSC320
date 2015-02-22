@@ -245,9 +245,16 @@ class P5Painter(P4Painter):
 ###########################################################
 
 class P6Painter(P5Painter):
+
+    def __init__(self):
+        P5Painter.__init__(self)
+        self.colourRange=(-15.0/255, 15.0/255)
+        self.angleRange=(-15.0/360*2*math.pi, 15.0/360*2*math.pi)
+        self.radRange=(-0.5, 0.5)
+
     def get_stroke_endpoints(self, center):       
-        diff = np.array([intensity_gradient[center[1], center[0], 1],
-            intensity_gradient[center[1], center[0], 0]])
+        diff = np.array([self.intensity_gradient[center[1], center[0], 1],
+            self.intensity_gradient[center[1], center[0], 0]])
  
         # TODO add a little bit of variance to the diff array
 
@@ -260,9 +267,10 @@ class P6Painter(P5Painter):
 
     def get_colour(self, point):
         colour = P5Painter.get_colour(self, point)
-        return (    max(0, min(1, colour[0] + random.uniform(*colourRange) )),
-                    max(0, min(1, colour[1] + random.uniform(*colourRange) )),
-                    max(0, min(1, colour[2] + random.uniform(*colourRange) )))
+        return (
+            max(0, min(1, colour[0] + random.uniform(*self.colourRange) )),
+            max(0, min(1, colour[1] + random.uniform(*self.colourRange) )),
+            max(0, min(1, colour[2] + random.uniform(*self.colourRange) )))
 
 
 
@@ -272,7 +280,7 @@ class P6Painter(P5Painter):
 ###########################################################
 
 
-def colorImSave(filename, array):
+def colourImSave(filename, array):
     imArray = imresize(array, 3., 'nearest')
     if (len(imArray.shape) == 2):
         imsave(filename, cm.jet(imArray))
