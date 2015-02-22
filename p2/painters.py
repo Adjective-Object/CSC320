@@ -262,7 +262,7 @@ class P6Painter(P5Painter):
         P5Painter.__init__(self)
         self.colourRange=(-15.0/255, 15.0/255)
         self.angleRange=(-15.0/360*2*math.pi, 15.0/360*2*math.pi)
-        self.radRange=(-0.5, 0.5)
+        self.radRange=(-3, 2)
         self.base_radius = self.radius
 
     def get_stroke_endpoints(self, center):       
@@ -291,7 +291,8 @@ class P6Painter(P5Painter):
 
     def do_paint(self):
         # randomize radius because I did not provide a nice wrapper for rad
-        # self.radius = self.base_radius + random.uniform(*self.radRange)
+        self.radius = max(1,
+            self.base_radius + random.randint(*self.radRange))
         P5Painter.do_paint(self)
 
 

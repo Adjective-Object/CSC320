@@ -106,7 +106,7 @@ def main():
     k = 0
 
     # paint over the image
-    while painter.should_paint() and k<5000:
+    while painter.should_paint():
         painter.do_paint();
 
         k += 1
