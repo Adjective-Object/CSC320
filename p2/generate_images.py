@@ -4,19 +4,18 @@ from subprocess import call
 import sys
 import os
 
-def paint_and_move_output_to(dir, image_name, part,
+def paint_and_move_output_to(ddir, image_name, part,
                              radius, length):
     print(str(part))
+    if not os.path.isdir(ddir):
+        os.makedirs(ddir)
+    
     call(['./paintrend.py',
         '--part={}'.format(part),
         '--image={}'.format(image_name),
+        '--out={}/part_{}.png'.format(ddir, part),
         '--radius={}'.format(radius),
         '--length={}'.format(length)])
-
-    if not os.path.isdir(dir):
-        os.makedirs(dir)
-
-    call(['mv', 'output.png', dir + '/part{}.png'.format(part)])
 
 if __name__ == '__main__':
     if len(sys.argv) != 5:

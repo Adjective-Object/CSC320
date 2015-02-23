@@ -37,11 +37,12 @@ def parse_opts():
     options, remaining_args = getopt.getopt(
         sys.argv[1:],
         'pirl:',
-        ['part=', 'image=', 'radius=', 'length=']
+        ['part=', 'image=', 'radius=', 'length=', "out="]
     )
 
     painter = None
     image_name = 'orchid.jpg'
+    out_name = 'output.jpg'
     radius = 3
     length = 20
 
@@ -69,6 +70,9 @@ def parse_opts():
         elif opt in ('-l', '--length'):
             length = float(arg)
 
+        elif opt in ('-o', '--out'):
+            out_name = arg
+
         else:
             debug("unrecognized option/argument pair '%s', '%s'" % (opt, arg))
             sys.exit(1)
@@ -80,15 +84,13 @@ def parse_opts():
     painter.radius = radius
     painter.halfLen = length / 2
 
-    return painter, image_name
+    return painter, image_name, out_name
 
 def main():
     # select the painter based on opt
     # painter = parse_opts
-    #painter, image_name = parse_opts()
-    painter, image_name = P6Painter(), "orchid.jpg"
+    painter, image_name, out_name = parse_opts()
     painter.base_radius = 2
-    painter.alpha = 0.7
 
     # Read image and convert it to double, and scale each R,G,B
     # channel to range [0,1].
@@ -130,7 +132,8 @@ def main():
     plt.axis('off')
     plt.imshow(canvas)
     plt.pause(3)
-    colourImSave('output.png', canvas)
+    print("writing %s"%(out_name))
+    colourImSave(out_name, canvas)
 
 
 if __name__ == "__main__":
