@@ -6,7 +6,8 @@ import os
 
 def paint_and_move_output_to(ddir, image_name, part,
                              radius, length):
-    print(str(part))
+    print("part {}".format(part))
+    
     if not os.path.isdir(ddir):
         os.makedirs(ddir)
     
