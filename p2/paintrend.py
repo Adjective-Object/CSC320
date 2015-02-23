@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/local/packages/anaconda3/bin/python
 
 # ##########################################################################
 ## Handout painting code.
@@ -85,7 +85,10 @@ def parse_opts():
 def main():
     # select the painter based on opt
     # painter = parse_opts
-    painter, image_name = parse_opts()
+    #painter, image_name = parse_opts()
+    painter, image_name = P6Painter(), "orchid.jpg"
+    painter.base_radius = 2
+    painter.alpha = 0.7
 
     # Read image and convert it to double, and scale each R,G,B
     # channel to range [0,1].
@@ -114,13 +117,13 @@ def main():
 
         k += 1
         if k % 100 == 0:
-            debug("painted stroke %s (%s remaining)" % 
-                (k, len(np.where(painter.canvas == -1)[0])))
+            debug("painted stroke %s (%s pixels remaining)" % 
+                (k, np.where(painter.canvas[:,:,3] < 1 )[0].size))
 
     print("done!")
     time.time()
 
-    canvas = painter.canvas
+    canvas = painter.canvas[:,:,0:3]
 
     canvas[canvas < 0] = 0.0
     plt.clf()

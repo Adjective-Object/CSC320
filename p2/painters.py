@@ -9,26 +9,20 @@ from pylab import *
 from scipy.misc import imsave
 
 from canny import *
+import time
 
 class Painter(object):
     image = None
     canvas = None
-    indices_x = None
-    indices_y = None
     radius = 3
     halfLen = 5
-
+    alpha = 1
 
     def load_image(self, image):
         self.image = image
         sizeIm = image.shape
         
-        self.canvas = np.empty((sizeIm[0], sizeIm[1], 3))
-        self.canvas.fill(-1)
-
-        [self.indices_x, self.indices_y] = np.meshgrid(
-                np.array([i + 1 for i in range(int(sizeIm[1]))]),
-                np.array([i + 1 for i in range(int(sizeIm[0]))]))
+        self.canvas = np.zeros((sizeIm[0], sizeIm[1], 4))
 
     def should_paint(self):
         raise NotImplementedError
@@ -48,10 +42,10 @@ class Painter(object):
         colour = self.get_colour(center)
         endpoint1, endpoint2 = self.get_stroke_endpoints(center)
 
-        self.canvas =  paintStroke(self.canvas, 
-                        self.indices_x, self.indices_y,
+        self.canvas =  paintStroke(self.canvas,
                         endpoint1, endpoint2,
-                        colour, self.radius)
+                        colour, self.radius,
+                        self.alpha)
 
 ###########################################################
 ## Part 1:
@@ -70,7 +64,7 @@ class P1Painter(Painter):
 
 
     def should_paint(self):
-        return np.where(self.canvas == -1)[0].size > 0
+        return np.where(self.canvas[:,:,3] < 1 )[0].size > 0
     
     def get_paint_coord(self):
         cntr = np.floor(
@@ -98,11 +92,13 @@ class P1Painter(Painter):
 class P2Painter(P1Painter):
 
     def get_paint_coord(self):
-         # get coordinates of unfilled regions
-        x, y, _ = np.where(self.canvas == -1)
+        # get coordinates of unfilled regions
+        # print(np.where(self.canvas[:,:,3] < 1))
+        x, y = np.where(self.canvas[:,:,3] < 1)
 
         # set the center to a random unfilled spot
-        index = random.randint(0, len(x) - 1)
+        
+        index = random.randint(0, len(x) - 1) if len(x) > 1 else 0
 
         return np.array([y[index] + 1, x[index] + 1])
 
@@ -288,13 +284,11 @@ class P6Painter(P5Painter):
 ## Painting helper methods
 ###########################################################
 
-
 def markStroke(mrkd, p0, p1, rad, val):
     # Mark the pixels that will be painted by
     # a stroke from pixel p0 = (x0, y0) to pixel p1 = (x1, y1).
     # These pixels are set to val in the ny x nx double array mrkd.
     # The paintbrush is circular with radius rad>0
-
     sizeIm = mrkd.shape
     sizeIm = sizeIm[0:2];
     nx = sizeIm[1]
@@ -324,10 +318,9 @@ def markStroke(mrkd, p0, p1, rad, val):
         t = q1 - q0
         nrmt = np.linalg.norm(t)
         [x, y] = np.meshgrid(np.array([i + 1 for i in range(int(szBB[1]))]),
-                             np.array([i + 1 for i in range(int(szBB[0]))]))
+        np.array([i + 1 for i in range(int(szBB[0]))]))
         d = np.zeros(szBB)
         d.fill(float("inf"))
-
         if nrmt == 0:
             # Use distance to point q0
             d = np.sqrt((x - q0[0]) ** 2 + (y - q0[1]) ** 2)
@@ -346,17 +339,15 @@ def markStroke(mrkd, p0, p1, rad, val):
             idx = (tmp > nrmt)
             if np.any(idx.flatten('F')):
                 d[np.where(idx)] = np.sqrt((x[np.where(idx)] - q1[0]) ** 2 + (y[np.where(idx)] - q1[1]) ** 2)
-
             #Pixels within crop box to paint have distance <= rad
             idx = (d <= rad)
-        #Mark the pixels
+            #Mark the pixels
         if np.any(idx.flatten('F')):
             xy = (bb0[1] - 1 + y[np.where(idx)] + sizeIm[0] * (bb0[0] + x[np.where(idx)] - 2)).astype(int)
             sz = mrkd.shape
             m = mrkd.flatten('F')
             m[xy - 1] = val
             mrkd = m.reshape(mrkd.shape[0], mrkd.shape[1], order='F')
-
             '''
             row = 0
             col = 0
@@ -367,23 +358,56 @@ def markStroke(mrkd, p0, p1, rad, val):
                 if row >= sz[0]:
                     row = 0
             '''
-
     return mrkd
 
-
-def paintStroke(canvas, x, y, p0, p1, colour, rad):
+def paintStroke(canvas, p0, p1, colour, rad, alpha):
     # Paint a stroke from pixel p0 = (x0, y0) to pixel p1 = (x1, y1)
     # on the canvas (ny x nx x 3 double array).
     # The stroke has rgb values given by colour (a 3 x 1 vector, with
     # values in [0, 1].  The paintbrush is circular with radius rad>0
-    sizeIm = canvas.shape
-    sizeIm = sizeIm[0:2]
-    idx = markStroke(np.zeros(sizeIm), p0, p1, rad, 1) > 0
-    # Paint
-    if np.any(idx.flatten('F')):
-        canvas = np.reshape(canvas, (np.prod(sizeIm), 3), "F")
-        xy = y[idx] + sizeIm[0] * (x[idx] - 1)
-        canvas[xy - 1, :] = np.tile(np.transpose(colour[:]), (len(xy), 1))
-        canvas = np.reshape(canvas, sizeIm + (3,), "F")
+    
+    sizeIm = canvas.shape[0:2]
+    
+    mask = markStroke(np.zeros(sizeIm), p0, p1, rad, 1)
+    mask = mask * alpha
+    
+    cmask = np.empty((sizeIm[0], sizeIm[1], 3))
+    cmask[:,:,0] = colour[0] * mask
+    cmask[:,:,1] = colour[1] * mask
+    cmask[:,:,2] = colour[2] * mask
+    
+    ones = np.empty(mask.shape)
+    ones.fill(1.0)
+    inverse_mask = ones - mask
+
+    canvas[:,:,0] = canvas[:,:,0] * inverse_mask
+    canvas[:,:,1] = canvas[:,:,1] * inverse_mask
+    canvas[:,:,2] = canvas[:,:,2] * inverse_mask
+    
+    canvas[:,:,0:3] = canvas[:,:,0:3] + cmask
+    canvas[:,:,3]   = canvas[:,:,3]   + mask
+
+    
+#    if random.random() < 0.01:
+#        subplot(2,2,1)    
+#        imshow(mask, cmap=cm.Greys);
+#        subplot(2,2,2)
+#        imshow(inverse_mask, cmap=cm.Greys);
+#        subplot(2,2,3)    
+#        imshow(cmask, cmap=cm.Greys);
+#        subplot(2,2,4)
+#        imshow(canvas[:,:,0:3])
+#        print("showing")
+#        show() # This does not block
+#        pause(10)
+#        sys.exit(1)
+    
     return canvas
 
+if __name__ == "__main__":
+    # os.chdir("/h/u17/g2/00/g1biggse/code/csc320/a2")
+    # os.chdir("/h/u17/g2/00/g4rbage/code/csc320/a2")
+
+    np.set_printoptions(threshold=np.nan)
+    import paintrend    
+    paintrend.main()
