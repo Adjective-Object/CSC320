@@ -1,30 +1,15 @@
-import os
-import sys
+#!/usr/bin/python
 
 # ##########################################################################
 ## Handout painting code.
 ###########################################################################
-from PIL import Image
-from pylab import *
 
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cbook as cbook
-
-import random
 import time
-import math
-
-import matplotlib.image as mpimg
-import scipy as sci
-from scipy.misc import imresize, imsave
-
-from canny import *
-
 import getopt
+
+from scipy.misc import imresize
+
 from debugtools import debug
-
-
 from painters import *
 
 ################################
@@ -42,20 +27,26 @@ def colourImSave(filename, array):
 
 
 def print_helptext():
-    debug("usage: 'paintend.py -p [version]'")
-    debug("    where [version] is one of p1, 1, p2, 2 ... p6, 6")
+    debug("usage: 'paintrend.py --part=<version> [--image=<image_name> --radius=<radius> --length=<length>]'")
+    debug("    where <version> is one of p1, 1, p2, 2 ... p6, 6")
+    debug("          <image_name> is the name of the image to use")
+    debug("          <radius> is the radius of brush stroke")
+    debug("          <length> is the maximum length of the brush stroke")
 
 def parse_opts():
     options, remaining_args = getopt.getopt(
         sys.argv[1:],
-        'p:',
-        ['part']
+        'pirl:',
+        ['part=', 'image=', 'radius=', 'length=']
     )
 
     painter = None
+    image_name = 'orchid.jpg'
+    radius = 3
+    length = 20
 
     for opt, arg in options:
-        if opt in ('-p', 'part'):
+        if opt in ('-p', '--part'):
             if arg in (1, '1', 'p1'):
                 painter = P1Painter()
             if arg in (2, '2', 'p2'):
@@ -68,6 +59,16 @@ def parse_opts():
                 painter = P5Painter()
             if arg in (6, '6', 'p6'):
                 painter = P6Painter()
+
+        elif opt in ('-i', '--image'):
+            image_name = arg
+
+        elif opt in ('-r', '--radius'):
+            radius = float(arg)
+
+        elif opt in ('-l', '--length'):
+            length = float(arg)
+
         else:
             debug("unrecognized option/argument pair '%s', '%s'" % (opt, arg))
             sys.exit(1)
@@ -76,17 +77,19 @@ def parse_opts():
         print_helptext()
         sys.exit(1)
 
-    return painter
+    painter.radius = radius
+    painter.halfLen = length / 2
 
+    return painter, image_name
 
 def main():
     # select the painter based on opt
     # painter = parse_opts
-    painter = parse_opts()
+    painter, image_name = parse_opts()
 
     # Read image and convert it to double, and scale each R,G,B
     # channel to range [0,1].
-    imRGB = array(Image.open('orchid.jpg'))
+    imRGB = array(Image.open(image_name))
     imRGB = double(imRGB) / 255.0
 
     plt.clf()
@@ -110,7 +113,7 @@ def main():
         painter.do_paint();
 
         k += 1
-        if (k % 100 == 0):
+        if k % 100 == 0:
             debug("painted stroke %s (%s remaining)" % 
                 (k, len(np.where(painter.canvas == -1)[0])))
 

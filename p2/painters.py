@@ -5,34 +5,16 @@ Created on Sun Feb 15 14:21:03 2015
 @author: g4rbage
 """
 
-from PIL import Image
 from pylab import *
-
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cbook as cbook
-
-import random
-import time
-import math
-
-import matplotlib.image as mpimg
-import scipy as sci
-from scipy.misc import imresize, imsave
+from scipy.misc import imsave
 
 from canny import *
-
-import getopt
-from debugtools import debug
-
-import painters
-
 
 class Painter(object):
     image = None
     canvas = None
-    indicies_x = None
-    indicies_y = None
+    indices_x = None
+    indices_y = None
     radius = 3
     halfLen = 5
 
@@ -122,7 +104,7 @@ class P2Painter(P1Painter):
         # set the center to a random unfilled spot
         index = random.randint(0, len(x) - 1)
 
-        return np.array([y[index], x[index]])
+        return np.array([y[index] + 1, x[index] + 1])
 
 ###########################################################
 ## Part 3:
@@ -224,10 +206,13 @@ class P5Painter(P4Painter):
         imIntensity = intensityImg(image)
         self.intensity_gradient = yx_derivatives(imIntensity)
 
-    def get_stroke_endpoints(self, center):       
+    def get_stroke_endpoints(self, center):
+
+        gradY = center[1] - 1 if (center[1] >= self.intensity_gradient.shape[0]) else center[1]
+        gradX = center[0] - 1 if (center[0] >= self.intensity_gradient.shape[1]) else center[0]
         diff = np.array(
-            [self.intensity_gradient[center[1], center[0], 1],
-            self.intensity_gradient[center[1], center[0], 0]])
+            [self.intensity_gradient[gradY, gradX, 1],
+             self.intensity_gradient[gradY, gradX, 0]])
  
         return ( walk_from(
                     center, self.canvas, self.edgels, 
@@ -265,10 +250,12 @@ class P6Painter(P5Painter):
         self.radRange=(-3, 2)
         self.base_radius = self.radius
 
-    def get_stroke_endpoints(self, center):       
-        diff = np.array([
-            self.intensity_gradient[center[1], center[0], 1],
-            self.intensity_gradient[center[1], center[0], 0]])
+    def get_stroke_endpoints(self, center):
+        gradY = center[1] - 1 if (center[1] >= self.intensity_gradient.shape[0]) else center[1]
+        gradX = center[0] - 1 if (center[0] >= self.intensity_gradient.shape[1]) else center[0]
+        diff = np.array(
+            [self.intensity_gradient[gradY, gradX, 1],
+             self.intensity_gradient[gradY, gradX, 0]])
 
         diff = np.array(
             rotate2D(diff[0], diff[1], random.uniform(*self.angleRange)))
@@ -285,9 +272,9 @@ class P6Painter(P5Painter):
     def get_colour(self, point):
         colour = P5Painter.get_colour(self, point)
         return (
-            max(0, min(1, colour[0] + random.uniform(*self.colourRange) )),
-            max(0, min(1, colour[1] + random.uniform(*self.colourRange) )),
-            max(0, min(1, colour[2] + random.uniform(*self.colourRange) )))
+            max(0, min(1, colour[0] + random.uniform(*self.colourRange))),
+            max(0, min(1, colour[1] + random.uniform(*self.colourRange))),
+            max(0, min(1, colour[2] + random.uniform(*self.colourRange))))
 
     def do_paint(self):
         # randomize radius because I did not provide a nice wrapper for rad
