@@ -59,9 +59,6 @@ def yx_derivatives(im, sigma=4):
     points[:,:,1] = gradx
     
     return points
-    
-    
-    
 
 
 def canny(im, sigma, thresHigh = 50,thresLow = 10):

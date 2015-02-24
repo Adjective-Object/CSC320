@@ -17,7 +17,6 @@ from painters import *
 ################################
 
 
-
 def colourImSave(filename, array):
     imArray = imresize(array, 3., 'nearest')
     if (len(imArray.shape) == 2):
@@ -37,13 +36,14 @@ def parse_opts():
     options, remaining_args = getopt.getopt(
         sys.argv[1:],
         'pirl:',
-        ['part=', 'image=', 'radius=', 'length=', "out="]
+        ['part=', 'image=', 'radius=', 'length=', "out=", "alpha="]
     )
 
     painter = None
     image_name = 'orchid.jpg'
     out_name = 'output.jpg'
     radius = 3
+    alpha = 1.0
     length = 20
 
     for opt, arg in options:
@@ -73,6 +73,9 @@ def parse_opts():
         elif opt in ('-o', '--out'):
             out_name = arg
 
+        elif opt in ('-a', '--alpha'):
+            alpha = float(arg)
+
         else:
             debug("unrecognized option/argument pair '%s', '%s'" % (opt, arg))
             sys.exit(1)
@@ -83,6 +86,7 @@ def parse_opts():
 
     painter.radius = radius
     painter.halfLen = length / 2
+    painter.alpha = alpha
 
     return painter, image_name, out_name
 
@@ -90,7 +94,6 @@ def main():
     # select the painter based on opt
     # painter = parse_opts
     painter, image_name, out_name = parse_opts()
-    painter.base_radius = 2
 
     # Read image and convert it to double, and scale each R,G,B
     # channel to range [0,1].

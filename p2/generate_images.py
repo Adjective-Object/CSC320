@@ -20,7 +20,7 @@ def paint_and_move_output_to(ddir, image_name, part,
 
 if __name__ == '__main__':
     if len(sys.argv) != 5:
-        print('Usage: {} input_image_name output_dir_name radius length'.format(sys.argv[0]))
+        print('Usage: {} input_image_name output_dir_name radius length alpha'.format(sys.argv[0]))
         sys.exit(1)
 
     for part in range(2, 7):
