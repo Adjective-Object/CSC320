@@ -9,8 +9,17 @@ import getopt
 
 from scipy.misc import imresize
 
-from debugtools import debug
 from painters import *
+
+DEBUG = True
+
+def debug(*args):
+    if DEBUG:
+        # using sys.stdout to make it work independent of python version
+        sys.stdout.write(" ".join([str(i) for i in args]))
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
 
 ################################
 ## Options and main loop logic #
@@ -36,7 +45,7 @@ def parse_opts():
     options, remaining_args = getopt.getopt(
         sys.argv[1:],
         'pirl:',
-        ['part=', 'image=', 'radius=', 'length=', "out=", "alpha="]
+        ['part=', 'image=', 'radius=', 'length=', "out=", "alpha=", "silent"]
     )
 
     painter = None
@@ -75,6 +84,10 @@ def parse_opts():
 
         elif opt in ('-a', '--alpha'):
             alpha = float(arg)
+
+        elif opt in ('-s', '--silent'):
+            global DEBUG
+            DEBUG = False
 
         else:
             debug("unrecognized option/argument pair '%s', '%s'" % (opt, arg))

@@ -11,6 +11,8 @@ from scipy.misc import imsave
 from canny import *
 import time
 
+from paintrend import debug
+
 class Painter(object):
     image = None
     canvas = None
@@ -93,7 +95,7 @@ class P2Painter(P1Painter):
 
     def get_paint_coord(self):
         # get coordinates of unfilled regions
-        # print(np.where(self.canvas[:,:,3] < 1))
+        # debug(np.where(self.canvas[:,:,3] < 1))
         x, y = np.where(self.canvas[:,:,3] < 1)
 
         # set the center to a random unfilled spot
@@ -405,7 +407,7 @@ def paintStroke(canvas, p0, p1, colour, rad, alpha):
 #        imshow(cmask, cmap=cm.Greys);
 #        subplot(2,2,4)
 #        imshow(canvas[:,:,0:3])
-#        print("showing")
+#        debug("showing")
 #        show() # This does not block
 #        pause(10)
 #        sys.exit(1)
@@ -416,6 +418,6 @@ if __name__ == "__main__":
     # os.chdir("/h/u17/g2/00/g1biggse/code/csc320/a2")
     # os.chdir("/h/u17/g2/00/g4rbage/code/csc320/a2")
 
-    np.set_printoptions(threshold=np.nan)
+    np.set_debugoptions(threshold=np.nan)
     import paintrend    
     paintrend.main()
