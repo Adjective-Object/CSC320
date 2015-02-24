@@ -128,10 +128,10 @@ def main():
     canvas = painter.canvas[:,:,0:3]
 
     canvas[canvas < 0] = 0.0
-    plt.clf()
-    plt.axis('off')
-    plt.imshow(canvas)
-    plt.pause(3)
+    # plt.clf()
+    # plt.axis('off')
+    # plt.imshow(canvas)
+    # plt.pause(3)
     print("writing %s"%(out_name))
     colourImSave(out_name, canvas)
 

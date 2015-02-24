@@ -136,7 +136,9 @@ class P3Painter(Painter):
         Painter.load_image(self, image)
 
         # compute the edgel of loaded image and store into the canvas on load
-        self.canvas = compute_canny_edgels(self.image)
+        self.canvas[:,:,0] = compute_canny_edgels(self.image)
+        self.canvas[:,:,1] = compute_canny_edgels(self.image)
+        self.canvas[:,:,2] = compute_canny_edgels(self.image)
 
     # circumvent the paint loop, instead just computing the canny edgels on load
     def should_paint(self):
@@ -209,7 +211,11 @@ class P5Painter(P4Painter):
         diff = np.array(
             [self.intensity_gradient[gradY, gradX, 1],
              self.intensity_gradient[gradY, gradX, 0]])
- 
+
+        # catch cases where the local derivaive is all zeroes
+        if diff[0] == 0 and diff[1] == 0:
+            diff = self.DUMB_DELTA
+
         return ( walk_from(
                     center, self.canvas, self.edgels, 
                     diff, self.halfLen)
@@ -256,7 +262,9 @@ class P6Painter(P5Painter):
         diff = np.array(
             rotate2D(diff[0], diff[1], random.uniform(*self.angleRange)))
 
-        # TODO add a little bit of variance to the diff array
+        # catch cases where the local derivaive is all zeroes
+        if diff[0] == 0 and diff[1] == 0:
+            diff = self.DUMB_DELTA
 
         return ( walk_from(
                     center, self.canvas, self.edgels, 
