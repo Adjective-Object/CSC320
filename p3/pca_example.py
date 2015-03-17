@@ -12,8 +12,6 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import os
 
-os.chdir('c:/Users/Guerzhoy/Desktop/CSC320/CSC320Report (1)/')
-
 #%matplotlib
 
 
@@ -139,11 +137,12 @@ def auto_thresh(flattened_im):
 #http://programmingcomputervision.com/downloads/pcv_data.zip
 
 #Change this:
-letters_dir = 'c:/Users/Guerzhoy/Desktop/CSC320/CSC320Report (1)/a_thumbs/'
+letters_dir = 'cropped/Adam_Sandler/'
 
 im_matrix, im_shape = get_digit_matrix(letters_dir)
+print im_shape
 for i in range(im_matrix.shape[0]):
-    im_matrix[i,:] = im_matrix[i,:]/255.0
+    im_matrix[i,:] = im_matrix[i,:, :, :]/255.0
 
 V,S,mean_im = pca(im_matrix)
 
