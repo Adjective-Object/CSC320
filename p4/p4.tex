@@ -1,0 +1,157 @@
+\documentclass[11pt]{article}
+\usepackage{calc,fancyhdr,lastpage}
+\usepackage{graphicx}
+\usepackage[hmargin=.75in,vmargin=1in,
+            footskip=.55in,headsep=.55in-\headheight]{geometry}
+\usepackage{amsmath,amssymb}
+
+% Formats, symbols, abbreviations.
+\let\altemph\textsl
+\let\strong\textbf
+\let\code\texttt
+\let\latinabb\emph
+\newcommand*{\etc}{\latinabb{etc}}
+\newcommand*{\eg}{\latinabb{e.g.}}
+\newcommand*{\ie}{\latinabb{i.e.}}
+% To get proper-looking symbols in \texttt.
+\newcommand*{\txtbksl} {\symbol{"5C}}% \
+\newcommand*{\txtcaret}{\symbol{"5E}}% ^
+\newcommand*{\txtunder}{\symbol{"5F}}% _
+\newcommand*{\txtlcurl}{\symbol{"7B}}% {
+\newcommand*{\txtrcurl}{\symbol{"7D}}% }
+\newcommand*{\txttilde}{\symbol{"7E}}% ~
+
+%% A heading in the instructions.
+\newcommand*{\heading}[1]{\subsubsection*{#1}}
+
+% Headings.
+\pagestyle{fancy}
+\let\headrule\empty
+\let\footrule\empty
+\lhead{{\bfseries CSC\,320\,H1S}}
+\chead{{\bfseries\large Assignment \#\,4
+    --- General Instructions}}
+\rhead{{\bfseries Winter 2015}}
+\lfoot{{Dept. of Computer Science, University of Toronto}}
+\cfoot{{}}
+\rfoot{{Page \thepage\ of \pageref{LastPage}}}
+
+
+\title{CSC320 A4}
+\author{Maxwell Huang-Hobbs (g4rbage)\\Alexander Biggs(g4biggse)}
+\date{March 2015}
+
+\begin{document}
+
+\maketitle
+\begin{center}
+Starting with:  
+$$C=F + (1-\alpha)B$$
+expand and rearrange:\\
+$$C=F + B- \alpha B$$
+$$C-B=F - \alpha B$$
+Because the above relationship holds for all colour channels of both images, this gives us the system
+$$\begin{pmatrix}
+C^{r}_1 - B^{r}_1 = F^{r} -\alpha B^{r}_1\\
+C^{g}_1 - B^{g}_1 = F^{g} -\alpha B^{g}_1\\
+...\\
+C^{g}_2 - B^{g}_2 = F^{g} -\alpha B^{g}_2\\
+C^{b}_2 - B^{b}_2 = F^{b} -\alpha B^{b}_2\\
+\end{pmatrix}$$
+or
+$$\begin{pmatrix}
+  C^{r}_1\\
+  C^{g}_1\\
+  C^{b}_1\\
+  C^{r}_2\\
+  C^{g}_2\\
+  C^{b}_2\\
+\end{pmatrix}
+-\begin{pmatrix}
+  B^{r}_1 \\
+  B^{g}_1 \\
+  B^{b}_1 \\
+  B^{r}_2 \\
+  B^{g}_2 \\
+  B^{b}_2 \\
+\end{pmatrix}
+=
+\begin{pmatrix}
+  F^{r} \\
+  F^{g} \\
+  F^{b} \\
+  F^{r} \\
+  F^{g} \\
+  F^{b} \\
+\end{pmatrix}
+-
+\alpha
+\begin{pmatrix}
+  B^{r}_1 \\
+  B^{g}_1 \\
+  B^{b}_1 \\
+  B^{r}_2 \\
+  B^{g}_2 \\
+  B^{b}_2 \\
+\end{pmatrix}
+$$
+
+we can rephrase the right side of the equation as:
+
+$$
+...
+=
+\begin{pmatrix}
+  1 F^{r} + 0 F^{g} + 0 F^{b} - \alpha B^{r}_1\\
+  0 F^{r} + 1 F^{g} + 0 F^{b} - \alpha B^{g}_1\\
+  0 F^{r} + 0 F^{g} + 1 F^{b} - \alpha B^{b}_1\\
+  1 F^{r} + 0 F^{g} + 0 F^{b} - \alpha B^{r}_2\\
+  0 F^{r} + 1 F^{g} + 0 F^{b} - \alpha B^{g}_2\\
+  0 F^{r} + 0 F^{g} + 1 F^{b} - \alpha B^{b}_2\\
+\end{pmatrix}
+=
+\begin{pmatrix}
+  1 & 0 & 0 & - B^{r}_1 \\
+  0 & 1 & 0 & - B^{g}_1 \\
+  0 & 0 & 1 & - B^{b}_1 \\
+  1 & 0 & 0 & - B^{r}_2 \\
+  0 & 1 & 0 & - B^{g}_2 \\
+  0 & 0 & 1 & - B^{b}_2 \\
+\end{pmatrix}
+*
+\begin{pmatrix}
+	F^{r} \\
+	F^{g} \\
+	F^{b} \\
+	\alpha \\
+\end{pmatrix}
+$$
+
+Substituting this into the previous equations gives us the final result of
+
+$$
+\begin{pmatrix}
+  C^{r}_1  -B^{r}_1 \\
+  C^{g}_1 -B^{g}_1 \\
+  C^{b}_1 -B^{b}_1 \\
+  C^{r}_2 -B^{r}_2 \\
+  C^{g}_2-B^{g}_2 \\
+  C^{b}_2-B^{b}_2 \\
+\end{pmatrix}=\begin{pmatrix}
+1 & 	0 & 	0 & -B^{r}_1 \\
+0 & 	1 & 	0 & -B^{g}_1 \\
+0 & 	0 & 	1 & -B^{b}_1 \\
+1 & 	0 & 	0 & -B^{r}_2 \\
+0 & 	1 & 	0 & -B^{g}_2 \\
+0 & 	0 & 	1 & -B^{b}_2 \\
+\end{pmatrix} 
+\begin{pmatrix}
+F_r \\
+F_g \\
+F_b \\
+\alpha
+\end{pmatrix}
+$$
+\end{center}
+
+\end{document}
