@@ -3,8 +3,10 @@ import os
 import os.path as path
 import numpy as np
 from scipy.misc import imread, imshow
+from pylab import cm
 import matplotlib.pyplot as plt
 import matplotlib
+import itertools, operator, random
 from p3 import *
 
 # set this to the directory that includes each of the actors
@@ -30,11 +32,11 @@ def load_data(actor, category):
 
     data_dirname = path.join(ACTORS_DIR, actor, category)
     filenames = os.listdir(data_dirname)
+    filenames = filenames[0:min(100, len(filenames))]
 
     data_matrix = np.zeros((len(filenames), IMAGE_SIZE))
 
-    debug(filenames)
-    for i, filename in list(enumerate(filenames))[0:min(100, len(filenames))]:
+    for i, filename in list(enumerate(filenames)):
         try:
             path_to_file = path.join(data_dirname, filename)
             data = imread(path_to_file, True)
@@ -174,15 +176,58 @@ def closest_projections(test_faces, training_faces, bases, k):
             test_face projected onto projections.
     '''
 
-    projected_training_faces = list(map (
+    projected_training_faces = np.array(list(map (
         lambda training_face: project_to_space(training_face, bases[:k]),
         training_faces
-    ))
+    )))
+    
+    projected_test_faces = np.array(list(map (
+        lambda test_face: project_to_space(test_face, bases[:k]),
+        test_faces
+    )))
+    
+    # plt.figure()
+    # plt.plot(projected_training_faces[:,0], projected_training_faces[:,1], 'ro')
+    # plt.plot(projected_test_faces[:,0], projected_test_faces[:,1], 'go')
+    # plt.show()
     
     return [closest_face(face, bases[:k], projected_training_faces)
                 for face in test_faces]
         
+def extend_str(s, l):
+    return s + " " * (l - len(s))
+
+def pretty_table(table, num_format="{:.2f}"):
+    table = [([" "+(item 
+                if isinstance(item, str) 
+                else (num_format.format(item) 
+                        if isinstance(item, float) 
+                        else str(item))) +" " 
+                for item in row]) if row else row
+            for row in table]
+
+    width = len(table[0])
+    row_widths = [max([len(row[i]) for row in table if row]) for i in range(width)]
+       
     
+    hbar = "-" * sum(row_widths) + "-" * (len(row_widths) -1)
+
+    def make_tabular(t):    
+        return ["|".join(
+                map(lambda tup: 
+                        extend_str(tup[1], row_widths[tup[0]]), 
+                        enumerate(row))
+                if row else [hbar]
+                ) for row in t]
+    
+    
+    return (" " + hbar + " " + "\n|" +
+            "|\n|".join(
+                make_tabular(table)
+            ) + "|\n" +" " + hbar + " ")
+    
+def most_common(lst):
+    return max(set(lst), key=lst.count)
 
 # the "main function" for testing
 def do_test():
@@ -191,12 +236,22 @@ def do_test():
     matplotlib.rc('font', **font)
     
         # all the actor directories that we have
-    actor_dirnames = os.listdir(ACTORS_DIR)
+    actor_dirnames = [
+                      "Adam_Sandler"
+                     ,"Andrea_Anders" 
+                     #,"Dianna_Agron"
+                     ,"Ashley_Benson"
+                     ,"Adrien_Brody"
+                     #,"Christina_Applegate"
+                     ,"Gillian_Anderson"
+                     #,"Aaron_Eckhart"
+                      ]
+    random.shuffle(actor_dirnames)
     debug("actors: %s"%(", ".join(actor_dirnames)))
 
     # tools for mapping from data index to actor name
     data = [load_data(actor, "training") for actor in actor_dirnames]
-    datalens = list(map(len, data))    
+    datalens = list(map(len, data))
     all_actor_faces = np.concatenate(data, axis=0)
     
     def get_name_from_ind(ind):
@@ -216,14 +271,20 @@ def do_test():
     fulls.fill(255)
     max_dist = ssd(emptys, fulls)    
     
-    def eval_ur_mum(k):    
+    results_table = [["k", "Name", "Accuracy"]]
+    similarity_table = [["k", "actual", "percieved", "count"]]
+    
+    complete_num = 0
+    complete_num_correct = 0
+    for k in [2, 5, 10, 20, 50, 80, 100, 150, 200]:
+        results_table.append(None)
+        similarity_table.append(None)
         total_num_correct, total_num = 0, 0
+        # results_table.append([k])
         for name in actor_dirnames:
-            debug("processing %s"%(name))
-            
-            valid_faces = load_data(name, "validation") - avg_face
-            debug("loaded %s images"%(len(valid_faces)))
+            valid_faces = load_data(name, "validation")
             total_num += len(valid_faces)
+            misses = []
             
             results = closest_projections(
                 valid_faces,
@@ -234,22 +295,30 @@ def do_test():
             num_correct=0
             for index, distance in results:    
                 out_name = get_name_from_ind(index)
-                num_correct += (name == out_name)
+                if name == out_name:
+                    num_correct += 1
+                else:
+                    misses.append(out_name)
                 '''
                 debug(
                     out_name,
                     1-(distance / max_dist))
                 '''
-            debug("fraction correct:", num_correct/len(valid_faces))
+            # debug("%s :"%(extend_str(name,20)), num_correct/len(valid_faces))
             total_num_correct += num_correct
-        
-        debug("total_fraction_correct for k=%s: %s"%(
-                k,
-                total_num_correct / total_num
-        ))
+            results_table.append([k, name, num_correct/len(valid_faces)])
+            mc =  most_common(misses)
+            similarity_table.append([k, name, mc, misses.count(mc)])
+       
+        results_table.append(["", "(avg)", total_num_correct * 1.0 / total_num])
+        complete_num += total_num
+        complete_num_correct += total_num_correct 
+
+    results_table.append(None)
+    results_table.append(["", "(avg)", complete_num_correct * 1.0 / complete_num])
     
-    for k in [2, 5, 10, 20, 50, 80, 100, 150, 200]:
-        eval_ur_mum(k)
+    debug(pretty_table(results_table))
+    debug(pretty_table(similarity_table))
     
     
 
