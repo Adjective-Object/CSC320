@@ -1,8 +1,10 @@
-import Image
+from pylab import *
 import os
 import os.path as path
 import numpy as np
-from scipy.misc import imread, imshow
+import matplotlib.pyplot as plt
+import sys
+from scipy.misc import imread, imshow, imsave
 
 # set this to the directory that includes each of the actors
 ACTORS_DIR = "processed_3"
@@ -74,16 +76,23 @@ def load_data(actor, category):
 
     return data_matrix
 
-def get_average_face(faces):
-    return np.mean(faces, axis=0)
+def load_all_data(category):
+    return reduce(lambda accum, actor: np.concatenate([accum, load_data(actor, category)], axis=0),
+                  actor_dirnames, np.empty((0, 1024)))
 
 def unflatten_face(flattened_face):
     return np.reshape(flattened_face, (flattened_face.shape[0] / IMAGE_WIDTH, IMAGE_WIDTH))
 
-def show_flattened_face(flattened_face):
+def save_flattened_face(filename, flattened_face):
     unflattened = unflatten_face(flattened_face)
-    imshow(unflattened)
+    imsave(filename, unflattened)
 
-data = load_data(actor_dirnames[0], "training")
-avg_face = get_average_face(data)
-show_flattened_face(avg_face)
+if __name__ == '__main__':
+    if sys.argv[1] == 'p2':
+        data = load_all_data('training')
+        proj, var, mean = pca(data)
+        eigenfaces = proj[:25]
+
+        # I couldn't get my image viewer to work, so I'm saving images instead
+        for i, eigenface in enumerate(eigenfaces):
+            save_flattened_face('results/eigenface_{}.png'.format(i), eigenface)
