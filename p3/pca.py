@@ -94,5 +94,6 @@ if __name__ == '__main__':
         eigenfaces = proj[:25]
 
         # I couldn't get my image viewer to work, so I'm saving images instead
+        save_flattened_face('results/average.png', mean)
         for i, eigenface in enumerate(eigenfaces):
             save_flattened_face('results/eigenface_{}.png'.format(i), eigenface)
