@@ -16,8 +16,6 @@ from PIL import Image
 act = ['Aaron Eckhart',  'Adam Sandler',   'Adrien Brody',  'Andrea Anders',    'Ashley Benson',    'Christina Applegate',    'Dianna Agron',  'Gillian Anderson']
 
 
-
-
 def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
     '''From:
     http://code.activestate.com/recipes/473878-timeout-function-using-threading/'''
