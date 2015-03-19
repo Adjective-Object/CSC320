@@ -4,6 +4,7 @@ import os.path as path
 import numpy as np
 from scipy.misc import imread, imshow
 import matplotlib.pyplot as plt
+import matplotlib
 from p3 import *
 
 # set this to the directory that includes each of the actors
@@ -32,8 +33,9 @@ def load_data(actor, category):
 
     data_matrix = np.zeros((len(filenames), IMAGE_SIZE))
 
+    debug(filenames)
     for i, filename in list(enumerate(filenames))[0:min(100, len(filenames))]:
-        try:        
+        try:
             path_to_file = path.join(data_dirname, filename)
             data = imread(path_to_file, True)
             flattened_data = np.ravel(data)
@@ -71,7 +73,7 @@ def pca(X):
             V[:,i] /= S
     else:
         # PCA - SVD used
-        U,S,V = linalg.svd(X)
+        U,S,V = np.linalg.svd(X)
         V = V[:num_data] # only makes sense to return the first num_data
 
     # return the projection matrix, the variance and the mean
@@ -124,7 +126,7 @@ def ssd(img1, img2):
     return np.sum((img1 - img2) ** 2 )
 
 def project_to_space(vec, bases):
-    return bases.T * vec
+    return np.dot(bases, vec)
 
 def distance_to_space(offset_face, components):
     ''' given a set of k basis vectors and a single vector
@@ -138,7 +140,7 @@ def distance_to_space(offset_face, components):
 def closest_face(test_face, bases, projected_training_faces):
     ''' TODO docs
     '''
-    projected_test_face = dot(bases, test_face) 
+    projected_test_face = project_to_space(test_face, bases)
     
     def ssd_to_test(face):
         return ssd(projected_test_face, face)
@@ -173,11 +175,11 @@ def closest_projections(test_faces, training_faces, bases, k):
     '''
 
     projected_training_faces = list(map (
-        lambda training_face: project_to_space(training_face, bases),
+        lambda training_face: project_to_space(training_face, bases[:k]),
         training_faces
     ))
     
-    return [closest_face(face, bases[0:k], projected_training_faces)
+    return [closest_face(face, bases[:k], projected_training_faces)
                 for face in test_faces]
         
     
@@ -191,7 +193,6 @@ def do_test():
         # all the actor directories that we have
     actor_dirnames = os.listdir(ACTORS_DIR)
     debug("actors: %s"%(", ".join(actor_dirnames)))
-    debug("processing %s"%(actor_dirnames[0]))
 
     # tools for mapping from data index to actor name
     data = [load_data(actor, "training") for actor in actor_dirnames]
@@ -205,6 +206,7 @@ def do_test():
             dataind += 1
         return actor_dirnames[dataind]
     
+    debug("performing pca on all actors")
     components, single_values, avg_face = pca(all_actor_faces)
     #showall_flattened(components[0:25])
     ''''''
@@ -217,7 +219,10 @@ def do_test():
     def eval_ur_mum(k):    
         total_num_correct, total_num = 0, 0
         for name in actor_dirnames:
+            debug("processing %s"%(name))
+            
             valid_faces = load_data(name, "validation") - avg_face
+            debug("loaded %s images"%(len(valid_faces)))
             total_num += len(valid_faces)
             
             results = closest_projections(
@@ -225,7 +230,6 @@ def do_test():
                 all_actor_faces,
                 components,
                 k)
-                
                 
             num_correct=0
             for index, distance in results:    
