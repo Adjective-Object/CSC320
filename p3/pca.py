@@ -6,7 +6,7 @@ from scipy.misc import imread, imshow
 from pylab import cm
 import matplotlib.pyplot as plt
 import matplotlib
-import itertools, operator, random
+import itertools, operator, random, math
 from p3 import *
 
 # set this to the directory that includes each of the actors
@@ -89,9 +89,10 @@ def most_common(lst):
 
 
 def pca(X):
-    """    Principal Component Analysis
+    """ Principal Component Analysis
         input: X, matrix with training data stored as flattened arrays in rows
-        return: projection matrix (with important dimensions first), variance and mean.
+        return: projection matrix (with important dimensions first), variance 
+        and mean.
         From: Jan Erik Solem, Programming Computer Vision with Python
         #http://programmingcomputervision.com/
     """
@@ -109,6 +110,13 @@ def pca(X):
         e,EV = np.linalg.eigh(M) # eigenvalues and eigenvectors
         tmp = np.dot(X.T,EV).T # this is the compact trick
         V = tmp[::-1] # reverse since last eigenvectors are the ones we want
+
+        # invert the eigenvalues and corresponding eigenvectors of negatives
+        for i, val in enumerate(e):
+            if val < 0:
+                EV[i] = -EV[i]
+                e[i]  = -e[i]
+
         S = np.sqrt(e)[::-1] # reverse since eigenvalues are in increasing order
         for i in range(V.shape[1]):
             V[:,i] /= S
@@ -134,7 +142,7 @@ def showall(imgs):
     '''
     width = math.floor(math.sqrt(imgs.shape[0]))
     height = math.ceil(imgs.shape[0] * 1.0 / width)
-    plt.figure()
+    plt.figure().canvas.set_window_title("anaconda")
     for i, img in enumerate(imgs):
         axes = plt.subplot(width, height, i+1)
         axes.get_xaxis().set_visible(False)
@@ -158,7 +166,7 @@ def show_flattened_face(flattened_face):
     ''' reshape a (1024) vector into a (32,32) image and display in greyscale
     '''
     unflattened = unflatten_face(flattened_face)
-    plt.figure()
+    plt.figure().canvas.set_window_title("anaconda")
     imgplt = plt.imshow(unflattened, cmap=cm.Greys_r)
     imgplt.set_interpolation('nearest')
     plt.show()
@@ -200,7 +208,18 @@ def closest_face(test_face, bases, projected_training_faces):
     
     return index, min_distance
         
+def project_and_reconstruct(test_faces, bases):
+
+    projected_test_faces = np.array(list(map (
+        lambda test_face: project_to_space(test_face, bases),
+        test_faces
+    )))
+
+    reconstructed_test_faces = np.dot(projected_test_faces, bases)
+
+    return reconstructed_test_faces
     
+
 def closest_projections(test_faces, training_faces, bases, k):
     ''' finds the closest face to test_face i
     
@@ -225,19 +244,9 @@ def closest_projections(test_faces, training_faces, bases, k):
         training_faces
     )))
     
-    projected_test_faces = np.array(list(map (
-        lambda test_face: project_to_space(test_face, bases[:k]),
-        test_faces
-    )))
+    # showall_flattened(project_and_reconstruct(test_faces, bases[:k]))
     
-    debug(projected_test_faces)
-    debug(bases[:k])    
-    
-    reconstructed_test_faces = np.dot(projected_test_faces, bases[:k])
-    
-    showall_flattened(reconstructed_test_faces)
-    
-    # plt.figure()
+    # plt.figure().canvas.set_window_title("anaconda")
     # plt.plot(projected_training_faces[:,0], projected_training_faces[:,1], 'ro')
     # plt.plot(projected_test_faces[:,0], projected_test_faces[:,1], 'go')
     # plt.show()
@@ -252,16 +261,18 @@ def do_test():
     matplotlib.rc('font', **font)
     
         # all the actor directories that we have
-    actor_dirnames = [
-                      "Adam_Sandler"
-                     ,"Andrea_Anders" 
-                     ,"Dianna_Agron"
-                     ,"Ashley_Benson"
-                     ,"Adrien_Brody"
-                     ,"Christina_Applegate"
-                     ,"Gillian_Anderson"
-                     ,"Aaron_Eckhart"
-                      ]
+    ismale_map = {
+      "Adam_Sandler" : 1
+     ,"Andrea_Anders": 0
+     ,"Dianna_Agron" : 0
+     ,"Ashley_Benson": 0
+     ,"Adrien_Brody" : 1
+     # ,"Christina_Applegate": 0
+     # ,"Gillian_Anderson" : 0
+     ,"Aaron_Eckhart": 1
+    }
+    actor_dirnames = ismale_map.keys()
+
     random.shuffle(actor_dirnames)
     debug("actors: %s"%(", ".join(actor_dirnames)))
 
@@ -289,19 +300,22 @@ def do_test():
     max_dist = ssd(emptys, fulls)    
     
     
-    results_table = [["k", "Name", "Accuracy"]]
+    results_table = [["k", "Name", "Accuracy", "Gender Match"]]
     similarity_table = [["k", "actual", "percieved", "count"]]
     
     
     complete_num = 0
     complete_num_correct = 0
-    for k in [100]:
+    complete_num_correct_gender = 0
+    for k in [2, 5, 10, 20, 50, 80, 100, 150, 200]:
         results_table.append(None)
         similarity_table.append(None)
         total_num_correct, total_num = 0, 0
+        total_num_correct_gender = 0
+
         # results_table.append([k])
         for name in actor_dirnames:
-            valid_faces = load_data(name, "validation")
+            valid_faces = load_data(name, "test")[0:10]
             mean_faces = np.repeat(
                             np.array([avg_face]), 
                             valid_faces.shape[0],
@@ -321,12 +335,15 @@ def do_test():
                 k)
                 
             num_correct=0
+            num_correct_gender=0
             for index, distance in results:    
                 out_name = get_name_from_ind(index)
                 if name == out_name:
                     num_correct += 1
                 else:
                     misses.append(out_name)
+                if ismale_map[name] == ismale_map[out_name]:
+                    num_correct_gender += 1
                 '''
                 debug(
                     out_name,
@@ -334,16 +351,25 @@ def do_test():
                 '''
             # debug("%s :"%(extend_str(name,20)), num_correct/len(valid_faces))
             total_num_correct += num_correct
-            results_table.append([k, name, num_correct/len(valid_faces)])
+            total_num_correct_gender += num_correct_gender
+            results_table.append([
+                k, name, 
+                num_correct *1.0/len(valid_faces), 
+                num_correct_gender *1.0/len(valid_faces)])
             mc =  most_common(misses)
             similarity_table.append([k, name, mc, misses.count(mc)])
        
-        results_table.append(["", "(avg)", total_num_correct * 1.0 / total_num])
+        results_table.append(["", "(avg)", 
+                total_num_correct * 1.0 / total_num,
+                total_num_correct_gender * 1.0 / total_num])
         complete_num += total_num
         complete_num_correct += total_num_correct 
+        complete_num_correct_gender += total_num_correct_gender
 
     results_table.append(None)
-    results_table.append(["", "(avg)", complete_num_correct * 1.0 / complete_num])
+    results_table.append(["", "(avg)", 
+        complete_num_correct * 1.0 / complete_num,
+        complete_num_correct_gender * 1.0 / complete_num])
     
     debug(pretty_table(results_table))
     debug(pretty_table(similarity_table))
