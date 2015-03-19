@@ -2,7 +2,7 @@ import Image
 import os
 import os.path as path
 import numpy as np
-from scipy.ndimage import imread
+from scipy.misc import imread, imshow
 
 # set this to the directory that includes each of the actors
 ACTORS_DIR = "processed_3"
@@ -49,6 +49,17 @@ def pca(X):
     return V,S,mean_X
 
 def load_data(actor, category):
+    """
+    Loads all the data for a given actor under the given category.
+    All images within the directory must be the same size.
+
+    :param actor: The actor directory name.
+    :param category: The type of data(one of training, test, validation)
+    :return: A NxM matrix where N is the number of images in the directory,
+    and M is the size of each image, where each row is the flattened data
+    of the image.
+    """
+
     data_dirname = path.join(ACTORS_DIR, actor, category)
     filenames = os.listdir(data_dirname)
 
@@ -56,11 +67,23 @@ def load_data(actor, category):
 
     for i, filename in enumerate(filenames):
         path_to_file = path.join(data_dirname, filename)
-        data = imread(path_to_file)
+        data = imread(path_to_file, True)
         flattened_data = np.ravel(data)
 
         data_matrix[i, :] = flattened_data
 
     return data_matrix
 
-data = load_data(actor_dirnames[0], "test")
+def get_average_face(faces):
+    return np.mean(faces, axis=0)
+
+def unflatten_face(flattened_face):
+    return np.reshape(flattened_face, (flattened_face.shape[0] / IMAGE_WIDTH, IMAGE_WIDTH))
+
+def show_flattened_face(flattened_face):
+    unflattened = unflatten_face(flattened_face)
+    imshow(unflattened)
+
+data = load_data(actor_dirnames[0], "training")
+avg_face = get_average_face(data)
+show_flattened_face(avg_face)
