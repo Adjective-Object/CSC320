@@ -1,13 +1,14 @@
+import itertools, operator, random, math, os
+
 from PIL import Image
-import os
-import os.path as path
-import numpy as np
 from scipy.misc import imread, imshow
-from pylab import cm
 import matplotlib.pyplot as plt
-import matplotlib
-import itertools, operator, random, math
-from p3 import *
+
+import numpy as np
+from pylab import cm
+
+from pretty_table import *
+from debug_pca import *
 
 # set this to the directory that includes each of the actors
 ACTORS_DIR = "processed_3"
@@ -17,7 +18,6 @@ IMAGE_WIDTH = 32
 IMAGE_HEIGHT = 32
 IMAGE_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH)
 IMAGE_SIZE = IMAGE_WIDTH * IMAGE_HEIGHT
-
 
 def load_data(actor, category):
     """
@@ -31,7 +31,7 @@ def load_data(actor, category):
     of the image.
     """
 
-    data_dirname = path.join(ACTORS_DIR, actor, category)
+    data_dirname = os.path.join(ACTORS_DIR, actor, category)
     filenames = os.listdir(data_dirname)
     filenames = filenames[0:min(100, len(filenames))]
 
@@ -39,50 +39,16 @@ def load_data(actor, category):
 
     for i, filename in list(enumerate(filenames)):
         try:
-            path_to_file = path.join(data_dirname, filename)
+            path_to_file = os.path.join(data_dirname, filename)
             data = imread(path_to_file, True)
             flattened_data = np.ravel(data)
-            
+
             data_matrix[i, :] = flattened_data / 255
         except Exception:
-            debug("error loading file %s"%(path))
+            debug("error loading file %s"%(os.path))
 
     return data_matrix
 
-  
-
-def extend_str(s, l):
-    return s + " " * (l - len(s))
-
-def pretty_table(table, num_format="{:.2f}"):
-    table = [([" "+(item 
-                if isinstance(item, str) 
-                else (num_format.format(item) 
-                        if isinstance(item, float) 
-                        else str(item))) +" " 
-                for item in row]) if row else row
-            for row in table]
-
-    width = len(table[0])
-    row_widths = [max([len(row[i]) for row in table if row]) for i in range(width)]
-       
-    
-    hbar = "-" * sum(row_widths) + "-" * (len(row_widths) -1)
-
-    def make_tabular(t):    
-        return ["|".join(
-                map(lambda tup: 
-                        extend_str(tup[1], row_widths[tup[0]]), 
-                        enumerate(row))
-                if row else [hbar]
-                ) for row in t]
-    
-    
-    return (" " + hbar + " " + "\n|" +
-            "|\n|".join(
-                make_tabular(table)
-            ) + "|\n" +" " + hbar + " ")
-    
 def most_common(lst):
     return max(set(lst), key=lst.count) if len(lst) > 0 else None
 
@@ -91,7 +57,7 @@ def most_common(lst):
 def pca(X):
     """ Principal Component Analysis
         input: X, matrix with training data stored as flattened arrays in rows
-        return: projection matrix (with important dimensions first), variance 
+        return: projection matrix (with important dimensions first), variance
         and mean.
         From: Jan Erik Solem, Programming Computer Vision with Python
         #http://programmingcomputervision.com/
@@ -128,49 +94,6 @@ def pca(X):
     # return the projection matrix, the variance and the mean
     return V,S,mean_X
 
-
-
-def unflatten_face(flattened_face):
-    ''' reshape a (1024) vector into a (32,32) image
-    '''
-    return np.reshape(flattened_face, (flattened_face.shape[0] / IMAGE_WIDTH, IMAGE_WIDTH))
-
-def showall(imgs):
-    ''' display a list of images as a grid 
-        (takes either a numpy array of images or a list of numpy arrays that 
-        are images)
-    '''
-    width = math.floor(math.sqrt(imgs.shape[0]))
-    height = math.ceil(imgs.shape[0] * 1.0 / width)
-    plt.figure().canvas.set_window_title("anaconda")
-    for i, img in enumerate(imgs):
-        axes = plt.subplot(width, height, i+1)
-        axes.get_xaxis().set_visible(False)
-        axes.get_yaxis().set_visible(False)
-        imgplt = plt.imshow(img, cmap=cm.Greys_r)
-        imgplt.set_interpolation('nearest')
-        plt.title(str(i+1))
-    plt.show()
-
-def showall_flattened(imgs_flat):
-    ''' reshape a set of (1024) vectors into (32,32) images, and display all of
-        them in a greyscale grid
-    '''
-    print(imgs_flat)
-    s=imgs_flat.shape
-    unflattened = np.reshape(imgs_flat, (s[0],32,32))
-    debug(unflattened.shape)
-    showall(unflattened)
-    
-def show_flattened_face(flattened_face):
-    ''' reshape a (1024) vector into a (32,32) image and display in greyscale
-    '''
-    unflattened = unflatten_face(flattened_face)
-    plt.figure().canvas.set_window_title("anaconda")
-    imgplt = plt.imshow(unflattened, cmap=cm.Greys_r)
-    imgplt.set_interpolation('nearest')
-    plt.show()
-
 def ssd(img1, img2):
     ''' given two same-dimension images, returns the sum of squared differences
         (euclidian distance) between the images
@@ -192,23 +115,29 @@ def distance_to_space(offset_face, components):
     return ssd(projection, offset_face)
 
 def closest_face(test_face, bases, projected_training_faces):
-    ''' TODO docs
+    ''' returns the closest face in `projected_training_faces` to test_face
+        projected onto the subspace defined by bases
     '''
     projected_test_face = project_to_space(test_face, bases)
-    
+
     def ssd_to_test(face):
         return ssd(projected_test_face, face)
-    
+
     distances = map(ssd_to_test, projected_training_faces)
 
     index, min_distance = min(
         enumerate(distances),
         key=lambda tuple_index_distance: tuple_index_distance[1]
     )
-    
+
     return index, min_distance
-        
+
 def project_and_reconstruct(test_faces, bases):
+    ''' projects a set of faces onto a subspace with bases `bases`
+
+        return:
+            the the closes image in the subspace from the `bases`
+    '''
 
     projected_test_faces = np.array(list(map (
         lambda test_face: project_to_space(test_face, bases),
@@ -218,162 +147,123 @@ def project_and_reconstruct(test_faces, bases):
     reconstructed_test_faces = np.dot(projected_test_faces, bases)
 
     return reconstructed_test_faces
-    
+
 
 def closest_projections(test_faces, training_faces, bases, k):
     ''' finds the closest face to test_face i
-    
+
         test_faces:
             the faces that are being queried against the subspaces
             (offset by the mean face)
         training_faces:
             a list of training faces from which bases was constructed
-        bases: 
+        bases:
             the bases of the subspace
         k:
-            the number of bases from bases to consider when creating the
+            the number of bases in `bases` to consider when creating the
             subspace
-    
+
         returns:
-            the indecies of the projection in 'projections' that is closest to
-            test_face projected onto projections.
+            the indecies of the projections from `trainign_faces` that are
+            closest to (test_face projected onto the subspace bases[:k]).
     '''
 
     projected_training_faces = np.array(list(map (
         lambda training_face: project_to_space(training_face, bases[:k]),
         training_faces
     )))
-    
+
     # showall_flattened(project_and_reconstruct(test_faces, bases[:k]))
-    
+
     # plt.figure().canvas.set_window_title("anaconda")
     # plt.plot(projected_training_faces[:,0], projected_training_faces[:,1], 'ro')
     # plt.plot(projected_test_faces[:,0], projected_test_faces[:,1], 'go')
     # plt.show()
-    
+
     return [closest_face(face, bases[:k], projected_training_faces)
                 for face in test_faces]
-      
-# the "main function" for testing
-def do_test():
-    font = {'family' : 'normal',
-            'size'   : 8}    
-    matplotlib.rc('font', **font)
-    
-        # all the actor directories that we have
-    ismale_map = {
-      "Adam_Sandler" : 1
-     ,"Andrea_Anders": 0
-     ,"Dianna_Agron" : 0
-     ,"Ashley_Benson": 0
-     ,"Adrien_Brody" : 1
-     # ,"Christina_Applegate": 0
-     # ,"Gillian_Anderson" : 0
-     ,"Aaron_Eckhart": 1
-    }
-    actor_dirnames = ismale_map.keys()
 
-    random.shuffle(actor_dirnames)
+# the "main function" for testing
+def do_test(actors_dir="processed_3", 
+            judge_dir="validation",
+            display_similarity_table=False,
+            k_values=[2, 5, 10, 20, 50, 80, 100, 150, 200]):
+    global ACTORS_DIR
+    ACTORS_DIR = actors_dir
+
+    # all the actor directories that we have, as well as the gender of the
+    # actors (m/f only for runtime purposes. I'm an nbphobic shit)
+    ismale_map = {
+      "Adam_Sandler" : True
+     ,"Andrea_Anders": False
+     ,"Dianna_Agron" : False
+     ,"Ashley_Benson": False
+     ,"Adrien_Brody" : True
+     ,"Christina_Applegate": False
+     ,"Gillian_Anderson" : False
+     ,"Aaron_Eckhart": True
+    }
+
+    actor_dirnames = ismale_map.keys()
     debug("actors: %s"%(", ".join(actor_dirnames)))
 
-    # tools for mapping from data index to actor name
+    # load actor from dirnames
     data = [load_data(actor, "training") for actor in actor_dirnames]
-    datalens = list(map(len, data))
     all_actor_faces = np.concatenate(data, axis=0)
 
-    # debug(data[0])
-    
+    # setup for mapping actor name back to index in all_actor_facs
+    datalens = list(map(len, data))
     def get_name_from_ind(ind):
         dataind = 0
         while ind > datalens[dataind]:
             ind -= datalens[dataind]
             dataind += 1
         return actor_dirnames[dataind]
-    
+
     debug("performing pca on all actors")
     components, single_values, avg_face = pca(all_actor_faces)
-    # showall_flattened(np.concatenate(([avg_face], components[0:24]), axis=0))
-    
+
     emptys = np.zeros((32,32))
     fulls =  np.empty((32,32))
     fulls.fill(255)
-    max_dist = ssd(emptys, fulls)    
-    
-    
-    results_table = [["k", "Name", "Accuracy", "Gender Match"]]
-    similarity_table = [["k", "actual", "percieved", "count"]]
-    
-    
-    complete_num = 0
-    complete_num_correct = 0
-    complete_num_correct_gender = 0
-    for k in [2, 5, 10, 20, 50, 80, 100, 150, 200]:
-        results_table.append(None)
-        similarity_table.append(None)
-        total_num_correct, total_num = 0, 0
-        total_num_correct_gender = 0
+    max_dist = ssd(emptys, fulls)
 
-        # results_table.append([k])
+    # list of results indexed face_comparasins[k][number] = (real, matched)
+    face_comparasins = {}
+
+    debug("matching faces back to bases")
+    for k in k_values:
+        debug("k =", k)
+        face_comparasins[k] = {}
         for name in actor_dirnames:
-            valid_faces = load_data(name, "test")[0:10]
+
+            # check against the validation set
+            valid_faces = load_data(name, judge_dir)[0:10]
             mean_faces = np.repeat(
-                            np.array([avg_face]), 
+                            np.array([avg_face]),
                             valid_faces.shape[0],
                             axis=0)
-            #valid_faces = np.subtract(valid_faces, mean_faces)
-            #debug("vald:", valid_faces.shape)
-            #debug("mean:", mean_faces.shape)
-            #debug("diff:", valid_faces.shape)
-            
-            total_num += len(valid_faces)
-            misses = []
-            
+
             results = closest_projections(
                 valid_faces,
                 all_actor_faces,
                 components,
-                k)
-                
-            num_correct=0
-            num_correct_gender=0
-            for index, distance in results:    
-                out_name = get_name_from_ind(index)
-                if name == out_name:
-                    num_correct += 1
-                else:
-                    misses.append(out_name)
-                if ismale_map[name] == ismale_map[out_name]:
-                    num_correct_gender += 1
-                '''
-                debug(
-                    out_name,
-                    1-(distance / max_dist))
-                '''
-            # debug("%s :"%(extend_str(name,20)), num_correct/len(valid_faces))
-            total_num_correct += num_correct
-            total_num_correct_gender += num_correct_gender
-            results_table.append([
-                k, name, 
-                num_correct *1.0/len(valid_faces), 
-                num_correct_gender *1.0/len(valid_faces)])
-            mc =  most_common(misses)
-            similarity_table.append([k, name, mc, misses.count(mc)])
-       
-        results_table.append(["", "(avg)", 
-                total_num_correct * 1.0 / total_num,
-                total_num_correct_gender * 1.0 / total_num])
-        complete_num += total_num
-        complete_num_correct += total_num_correct 
-        complete_num_correct_gender += total_num_correct_gender
+                k
+            )
 
-    results_table.append(None)
-    results_table.append(["", "(avg)", 
-        complete_num_correct * 1.0 / complete_num,
-        complete_num_correct_gender * 1.0 / complete_num])
-    
-    debug(pretty_table(results_table))
-    debug(pretty_table(similarity_table))
-    
+            # put the result in the comparasins dict
+            face_comparasins[k][name] = [
+                get_name_from_ind(index)
+                    for index, distance in results
+            ]
+
+    debug("building tables...")
+
+    print(pretty_table(build_results_table(face_comparasins, ismale_map)))
+    if (display_similarity_table):
+        similarity_table = build_similarity_table(face_comparasins)
+        print(pretty_table(similarity_table))
+
 
 if __name__ == "__main__":
     do_test()
