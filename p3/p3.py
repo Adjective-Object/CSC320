@@ -30,11 +30,12 @@ def print_helptext():
 def parse_opts():
     options, remaining_args = getopt.getopt(
         sys.argv[1:],
-        'hsma:k:',
-        ['help', 'silent', 'mismatches', 'actors_dir=', 'k=']
+        'hsma:k:w',
+        ['help', 'silent', 'mismatches', 'actors_dir=', 'k=', "write_misses"]
     )
 
     (debug, p_mismatch, actors_dir) = (True, False, "processed_3")
+    write_misses = False
     ks = [2,5,10,20,50,80,100,150,200]
 
     for opt, arg in options:
@@ -45,6 +46,8 @@ def parse_opts():
             exit(1)
         elif opt in ('-m', '--mismatch'):
             p_mismatch = True
+        elif opt in ('-w', '--write_misses'):
+            write_misses = True
         elif opt in ('-a', '--actors_dir'):
             actors_dir = arg
         elif opt in ('-k', '--k'):
@@ -57,15 +60,16 @@ def parse_opts():
     if len(remaining_args) == 0:
         remaining_args = ["validation"]
 
-    return  debug, p_mismatch, actors_dir, remaining_args, ks
+    return  debug, write_misses, p_mismatch, actors_dir, remaining_args, ks
 
 
 if __name__ == "__main__":
-    DEBUG, p_mismatch, actors_dir, v_dirs, ks = parse_opts()
+    DEBUG, write_misses, p_mismatch, actors_dir, v_dirs, ks = parse_opts()
     set_debug(DEBUG)
     for v_dir in v_dirs:
         do_test(actors_dir=actors_dir,
                 display_similarity_table=p_mismatch,
                 judge_dir=v_dir,
-                k_values=ks)
+                k_values=ks,
+                SAVE_FACE_MISSES=write_misses)
 

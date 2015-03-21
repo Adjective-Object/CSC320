@@ -1,7 +1,7 @@
 import itertools, operator, random, math, os
 
 from PIL import Image
-from scipy.misc import imread, imshow
+from scipy.misc import imread, imshow, imsave
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -12,6 +12,7 @@ from debug_pca import *
 
 # set this to the directory that includes each of the actors
 ACTORS_DIR = "processed_3"
+MISS_DIR = "misses"
 
 # constants for images
 IMAGE_WIDTH = 32
@@ -52,6 +53,11 @@ def load_data(actor, category):
 def most_common(lst):
     return max(set(lst), key=lst.count) if len(lst) > 0 else None
 
+def unflatten_face(flattened_face):
+    ''' reshape a (1024) vector into a (32,32) image
+    '''
+    return np.reshape(flattened_face, (flattened_face.shape[0] / IMAGE_WIDTH, IMAGE_WIDTH))
+
 
 
 def pca(X):
@@ -83,7 +89,8 @@ def pca(X):
                 EV[i] = -EV[i]
                 e[i]  = -e[i]
 
-        S = np.sqrt(e)[::-1] # reverse since eigenvalues are in increasing order
+        # reverse since eigenvalues are in increasing order
+        S = np.sqrt(np.abs(e))[::-1]
         for i in range(V.shape[1]):
             V[:,i] /= S
     else:
@@ -183,11 +190,13 @@ def closest_projections(test_faces, training_faces, bases, k):
     return [closest_face(face, bases[:k], projected_training_faces)
                 for face in test_faces]
 
+
 # the "main function" for testing
 def do_test(actors_dir="processed_3", 
             judge_dir="validation",
             display_similarity_table=False,
-            k_values=[2, 5, 10, 20, 50, 80, 100, 150, 200]):
+            k_values=[2, 5, 10, 20, 50, 80, 100, 150, 200],
+            SAVE_FACE_MISSES=False):
     global ACTORS_DIR
     ACTORS_DIR = actors_dir
 
@@ -203,6 +212,10 @@ def do_test(actors_dir="processed_3",
      ,"Gillian_Anderson" : False
      ,"Aaron_Eckhart": True
     }
+
+    if SAVE_FACE_MISSES and not os.path.exists(MISS_DIR):
+        debug("making missed face directory")
+        os.mkdir(MISS_DIR)
 
     actor_dirnames = ismale_map.keys()
     debug("actors: %s"%(", ".join(actor_dirnames)))
@@ -256,6 +269,30 @@ def do_test(actors_dir="processed_3",
                 get_name_from_ind(index)
                     for index, distance in results
             ]
+
+            if SAVE_FACE_MISSES:
+                for i, (index, distance) in enumerate(results):
+                    mnam = get_name_from_ind(index)
+                    if mnam != name:
+                        debug("saving missed faces %s %s"%(name, mnam))
+                        realface = unflatten_face(
+                                project_and_reconstruct(
+                                    valid_faces[i:i+1],
+                                    components[:k]) [0])
+
+                        missface = unflatten_face(
+                                project_and_reconstruct(
+                                    all_actor_faces[index:index+1],
+                                    components[:k]) [0])
+
+                        joinface = np.empty((32, 64))
+                        joinface[:,:32] = realface
+                        joinface[:,32:]  = missface
+
+                        imsave(
+                            MISS_DIR+"/k%s_%s_%s_%s.png"%(k, name, i, mnam),
+                            joinface
+                        )
 
     debug("building tables...")
 
