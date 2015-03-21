@@ -6,11 +6,13 @@
 
 import time
 import getopt
+import sys
 
-from scipy.misc import imresize
+from scipy.misc import imresize, imsave
 from PIL import Image
-from parts import P1, P2
+import numpy as np
 
+from parts import P1, P2
 
 DEBUG = True
 def debug(*args):
@@ -27,11 +29,11 @@ def debug(*args):
 
 
 def print_helptext():
-    debug("usage: 'p4.py [options] <back_a> <comp_a> <back_b> <comp_b>")
+    debug("usage: 'p4.py [options] <back_a> <comp_a> <back_b> <comp_b> <part>")
     debug("     <back_a> is the background of image a")
-    debug("     <comp_a> is the composite of the object against backgroud a")
+    debug("     <comp_a> is the composite of the object against background a")
     debug("     <back_b> is the background of image b")
-    debug("     <comp_b> is the composite of the object against backgroud b")
+    debug("     <comp_b> is the composite of the object against background b")
     debug("     [options] of")
     debug("         --background <background>")
     debug("             The new background to composite the foreground against")
@@ -50,18 +52,18 @@ def parse_opts():
     )
 
     out_background = None
-    out_name = 'out.png'
+    out_name = 'results/out.png'
 
     for opt, arg in options:
 
-        elif opt in ('-o', '--out'):
+        if opt in ('-o', '--out'):
             image_name = arg
 
         elif opt in ('-b', '--background'):
-            radius = float(arg)
+            opt_background = arg
 
         elif opt in ('-h', '--help'):
-            print_helptext();
+            print_helptext()
             exit(0);
 
         elif opt in ('-s', '--silent'):
@@ -69,34 +71,27 @@ def parse_opts():
             DEBUG = False
         else:
             debug("unrecognized option/argument pair '%s', '%s'" % (opt, arg))
-            debug("%s --help for more info"%(sys.argv[0]));
+            debug("%s --help for more info"%(sys.argv[0]))
             sys.exit(1)
-
-    if not painter:
-        print_helptext()
-        sys.exit(1)
-
-    painter.radius = radius
-    painter.halfLen = length / 2
-    painter.alpha = alpha
 
     if len(remaining_args) < 4:
         debug("lacking one of <back_a> <comp_a> <back_b> <comp_b>")
-        debug("%s --help for more info"%(sys.argv[0]));
+        debug("%s --help for more info"%(sys.argv[0]))
         sys.exit(1)
 
-    return  part, out_background, out_name, remaining_args
+    return out_background, out_name, remaining_args
 
 def main():
-    part, out_background, out_name, imgs = parse_opts();
-    
-    if out_background:
-        part = P2(imgs, out_background)
-    else:
-        part = P1(imgs)
+    out_background, out_name, image_names = parse_opts()
 
-    out_img = Image(part.execute());
-    out_img.save(out_name);
+    if out_background:
+        part = P2(image_names, out_background)
+    else:
+        part = P1(image_names)
+
+    out_img = part.execute()
+    debug((out_img.min(), out_img.max()))
+    imsave(out_name, out_img)
 
 if __name__ == "__main__":
     # os.chdir("/h/u17/g2/00/g1biggse/code/csc320/a2")

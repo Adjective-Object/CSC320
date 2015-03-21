@@ -4,8 +4,8 @@ from PIL import Image
 from scipy.misc import imread, imshow, imsave
 import matplotlib.pyplot as plt
 
+from scipy.misc import imread
 import numpy as np
-from pylab import cm
 
 from pretty_table import *
 from debug_pca import *
@@ -20,7 +20,7 @@ IMAGE_HEIGHT = 32
 IMAGE_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH)
 IMAGE_SIZE = IMAGE_WIDTH * IMAGE_HEIGHT
 
-def load_data(actor, category):
+def load_data(actor, actors_dir, category):
     """
     Loads all the data for a given actor under the given category.
     All images within the directory must be the same size.
@@ -32,7 +32,7 @@ def load_data(actor, category):
     of the image.
     """
 
-    data_dirname = os.path.join(ACTORS_DIR, actor, category)
+    data_dirname = os.path.join(actors_dir, actor, category)
     filenames = os.listdir(data_dirname)
     filenames = filenames[0:min(100, len(filenames))]
 
@@ -52,6 +52,12 @@ def load_data(actor, category):
 
 def most_common(lst):
     return max(set(lst), key=lst.count) if len(lst) > 0 else None
+
+def unflatten_face(flattened_face):
+    ''' reshape a (1024) vector into a (32,32) image
+    '''
+    return np.reshape(flattened_face, (flattened_face.shape[0] / IMAGE_WIDTH, IMAGE_WIDTH))
+
 
 
 def pca(X):
@@ -102,7 +108,6 @@ def ssd(img1, img2):
     return np.sum((img1 - img2) ** 2 )
 
 
-
 def project_to_space(vec, bases):
     return np.dot(bases, vec)
 
@@ -149,7 +154,6 @@ def project_and_reconstruct(test_faces, bases):
 
     return reconstructed_test_faces
 
-
 def closest_projections(test_faces, training_faces, bases, k):
     ''' finds the closest face to test_face i
 
@@ -169,7 +173,7 @@ def closest_projections(test_faces, training_faces, bases, k):
             closest to (test_face projected onto the subspace bases[:k]).
     '''
 
-    projected_training_faces = np.array(list(map (
+    projected_training_faces = np.array(list(map(
         lambda training_face: project_to_space(training_face, bases[:k]),
         training_faces
     )))
@@ -184,19 +188,15 @@ def closest_projections(test_faces, training_faces, bases, k):
     return [closest_face(face, bases[:k], projected_training_faces)
                 for face in test_faces]
 
-
 # the "main function" for testing
 def do_test(actors_dir="processed_3", 
             judge_dir="validation",
             display_similarity_table=False,
             k_values=[2, 5, 10, 20, 50, 80, 100, 150, 200],
-            SAVE_FACE_MISSES=False,
-            eigenmode=0):
-    global ACTORS_DIR
-    ACTORS_DIR = actors_dir
+            SAVE_FACE_MISSES=False):
 
     # all the actor directories that we have, as well as the gender of the
-    # actors (m/f only for runtime purposes. I'm an nbphobic shit)
+    # actors (m/f only for runtime purposes)
     ismale_map = {
       "Adam_Sandler" : True
      ,"Andrea_Anders": False
@@ -216,7 +216,7 @@ def do_test(actors_dir="processed_3",
     debug("actors: %s"%(", ".join(actor_dirnames)))
 
     # load actor from dirnames
-    data = [load_data(actor, "training") for actor in actor_dirnames]
+    data = [load_data(actor, actors_dir, "training") for actor in actor_dirnames]
     all_actor_faces = np.concatenate(data, axis=0)
 
     # setup for mapping actor name back to index in all_actor_facs
@@ -231,32 +231,22 @@ def do_test(actors_dir="processed_3",
     debug("performing pca on all actors")
     components, single_values, avg_face = pca(all_actor_faces)
 
-    if eigenmode:
-        show_flattened_face(avg_face)
-        showall_flattened(components[:25])
-        sys.exit(0)
-
-
-    emptys = np.zeros((32,32))
-    fulls =  np.empty((32,32))
+    emptys = np.zeros((32, 32))
+    fulls = np.empty((32, 32))
     fulls.fill(255)
     max_dist = ssd(emptys, fulls)
 
-    # list of results indexed face_comparasins[k][number] = (real, matched)
-    face_comparasins = {}
+    # list of results indexed face_comparisons[k][number] = (real, matched)
+    face_comparisons = {}
 
     debug("matching faces back to bases")
     for k in k_values:
         debug("k =", k)
-        face_comparasins[k] = {}
+        face_comparisons[k] = {}
         for name in actor_dirnames:
 
             # check against the validation set
             valid_faces = load_data(name, judge_dir)[0:10]
-            mean_faces = np.repeat(
-                            np.array([avg_face]),
-                            valid_faces.shape[0],
-                            axis=0)
 
             results = closest_projections(
                 valid_faces,
@@ -265,8 +255,8 @@ def do_test(actors_dir="processed_3",
                 k
             )
 
-            # put the result in the comparasins dict
-            face_comparasins[k][name] = [
+            # put the result in the comparisons dict
+            face_comparisons[k][name] = [
                 get_name_from_ind(index)
                     for index, distance in results
             ]
@@ -297,9 +287,10 @@ def do_test(actors_dir="processed_3",
 
     debug("building tables...")
 
-    print(pretty_table(build_results_table(face_comparasins, ismale_map)))
+    print(pretty_table(build_results_table(face_comparisons, ismale_map)))
+
     if (display_similarity_table):
-        similarity_table = build_similarity_table(face_comparasins)
+        similarity_table = build_similarity_table(face_comparisons)
         print(pretty_table(similarity_table))
 
 
