@@ -13,7 +13,7 @@ import urllib
 from PIL import Image
 
 
-act = ['Aaron Eckhart',  'Adam Sandler',   'Adrien Brody',  'Andrea Anders',    'Ashley Benson',    'Christina Applegate',    'Dianna Agron',  'Gillian Anderson']
+act = ['Aaron Eckhart']#,  'Adam Sandler',   'Adrien Brody',  'Andrea Anders',    'Ashley Benson',    'Christina Applegate',    'Dianna Agron',  'Gillian Anderson']
 
 
 def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
@@ -51,9 +51,9 @@ def intensityImg(im):
     return intensities
 
 
-def processImage(local_file, face_coords, bounds_ratio, width):
+def processImage(local_file, face_coords, bounds_ratio):
     try:
-        img = imread("unprocessed/%s"%(local_file))
+        img = imread("unprocessed/%s" % (local_file))
 
         #TODO image_bounds
         real_height = face_coords[3] - face_coords[1]
@@ -66,6 +66,9 @@ def processImage(local_file, face_coords, bounds_ratio, width):
                     face_coords[0]+hdiff/2:face_coords[2]-(hdiff-hdiff/2),
                     :]
             ).convert('LA')
+
+        img_thumb = imresize(img_processed, (32, 32))
+        print("Saving to: " + local_file)
         img_processed.save("processed/"+local_file,"png")
     except:
         print("error processing %s %s"%(local_file, face_coords))
@@ -93,14 +96,17 @@ def doAll():
 
         name = a.replace(" ","_")
 
-
         if not os.path.exists("unprocessed/"):
             os.mkdir("unprocessed")
         if not os.path.exists("processed/"):
             os.mkdir("processed")
 
-        if not os.path.exists("processed/%s"%(name)):
-            os.mkdir("processed/%s"%(name))
+        actor_dirname = "processed/%s" % name
+        if not os.path.exists(actor_dirname):
+            os.mkdir(actor_dirname)
+            os.mkdir(actor_dirname + "/training")
+            os.mkdir(actor_dirname + "/test")
+            os.mkdir(actor_dirname + "/validation")
 
         for line in open("faces_subset.txt"):
             if a in line:
@@ -114,7 +120,8 @@ def doAll():
                 person_name = spl[0].replace(" ","_")
                 face_coords = map(lambda a: int(a), spl[4].split(","))
                 url = spl[3]
-                local_file = "%s/%s.%s"%(person_name, i, url.split(".")[-1])
+                extension = url.split('.')[-1]
+                local_file = "%s/training/%s.%s" % (person_name, i, extension)
 
                 if not os.path.exists("unprocessed/%s"%(person_name)):
                     os.mkdir("unprocessed/%s"%(person_name))
@@ -128,6 +135,7 @@ def doAll():
                     print "..fetching file failed <%s>"%(url)
                     continue
 
+                print("processing " + local_file)
                 processImage(local_file, face_coords, bounds_ratio)
                 i += 1
 
