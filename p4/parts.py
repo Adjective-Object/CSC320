@@ -17,8 +17,9 @@ def matting(b1, b2, c1, c2):
         br1, bg1, bb1 = rgb(b1)
         br2, bg2, bb2 = rgb(b2)
 
-        # I would ideally want to use np.concatenate here to combine b1 and b2 into a single column vector,
-        # but it creates an array of values as opposed to a vector, and converting it didn't seem easy
+        # I would ideally want to use np.concatenate here to combine b1 and b2 
+        # into a single column vector, but it creates an array of values as 
+        # opposed to a vector, and converting it didn't seem easy
         bg_values = np.array([[br1], [bg1], [bb1], [br2], [bg2], [bb2]])
 
         A = np.concatenate([np.repeat(np.identity(3), 2, axis = 0), bg_values], axis = 1)
@@ -26,7 +27,6 @@ def matting(b1, b2, c1, c2):
         b = np.concatenate([rgb(c1) - rgb(b1), rgb(c2) - rgb(b2)])
 
         # TODO: post-processing
-
         result[y, x, :] = Aplus.dot(b)
 
     return np.where(np.clip(result, 0, 1) > EPSILON, 0, 1)
