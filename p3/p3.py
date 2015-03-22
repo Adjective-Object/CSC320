@@ -26,16 +26,19 @@ def print_helptext():
     debug("          defaults to 2,5,10,20,50,80,100,150,200")
     debug("    --mismatches")
     debug("          prints a table showing most common mismatches")
+    debug("    --eigenfaces")
+    debug("          override default behavior and display a figure of 25 eigenfaces")
 
 def parse_opts():
     options, remaining_args = getopt.getopt(
         sys.argv[1:],
-        'hsma:k:w',
-        ['help', 'silent', 'mismatches', 'actors_dir=', 'k=', "write_misses"]
+        'hsma:k:we:',
+        ['help', 'silent', 'mismatches', 'actors_dir=', 'k=', 
+            "write_misses", "eigenfaces="]
     )
 
     (debug, p_mismatch, actors_dir) = (True, False, "processed_3")
-    write_misses = False
+    write_misses, eigenfaces = False, 0
     ks = [2,5,10,20,50,80,100,150,200]
 
     for opt, arg in options:
@@ -52,6 +55,8 @@ def parse_opts():
             actors_dir = arg
         elif opt in ('-k', '--k'):
             ks = [int(a) for a in arg.split(',')]
+        elif opt in ('-e', '--eigenfaces'):
+            eigenfaces = arg;
         else:
             debug("unrecognized option/argument pair '%s', '%s'" %(opt, arg))
             debug("%s --help for more info"%(sys.argv[0]));
@@ -60,16 +65,18 @@ def parse_opts():
     if len(remaining_args) == 0:
         remaining_args = ["validation"]
 
-    return  debug, write_misses, p_mismatch, actors_dir, remaining_args, ks
+    return  (debug, write_misses, p_mismatch, 
+            actors_dir, remaining_args, ks, eigenfaces)
 
 
 if __name__ == "__main__":
-    DEBUG, write_misses, p_mismatch, actors_dir, v_dirs, ks = parse_opts()
+    DEBUG, write_misses, p_mismatch, actors_dir, v_dirs, ks, eigenmode = parse_opts()
     set_debug(DEBUG)
     for v_dir in v_dirs:
         do_test(actors_dir=actors_dir,
                 display_similarity_table=p_mismatch,
                 judge_dir=v_dir,
                 k_values=ks,
-                SAVE_FACE_MISSES=write_misses)
+                SAVE_FACE_MISSES=write_misses,
+                eigenmode=eigenmode)
 

@@ -53,12 +53,6 @@ def load_data(actor, category):
 def most_common(lst):
     return max(set(lst), key=lst.count) if len(lst) > 0 else None
 
-def unflatten_face(flattened_face):
-    ''' reshape a (1024) vector into a (32,32) image
-    '''
-    return np.reshape(flattened_face, (flattened_face.shape[0] / IMAGE_WIDTH, IMAGE_WIDTH))
-
-
 
 def pca(X):
     """ Principal Component Analysis
@@ -196,7 +190,8 @@ def do_test(actors_dir="processed_3",
             judge_dir="validation",
             display_similarity_table=False,
             k_values=[2, 5, 10, 20, 50, 80, 100, 150, 200],
-            SAVE_FACE_MISSES=False):
+            SAVE_FACE_MISSES=False,
+            eigenmode=0):
     global ACTORS_DIR
     ACTORS_DIR = actors_dir
 
@@ -235,6 +230,12 @@ def do_test(actors_dir="processed_3",
 
     debug("performing pca on all actors")
     components, single_values, avg_face = pca(all_actor_faces)
+
+    if eigenmode:
+        show_flattened_face(avg_face)
+        showall_flattened(components[:25])
+        sys.exit(0)
+
 
     emptys = np.zeros((32,32))
     fulls =  np.empty((32,32))

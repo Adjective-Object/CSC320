@@ -3,11 +3,24 @@ import itertools, operator, random, math, os, sys
 from PIL import Image
 from scipy.misc import imread, imshow
 import matplotlib.pyplot as plt
+import matplotlib
 
 import numpy as np
 from pylab import cm
 
 DEBUG = True
+
+
+# constants for images
+IMAGE_WIDTH = 32
+IMAGE_HEIGHT = 32
+IMAGE_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH)
+IMAGE_SIZE = IMAGE_WIDTH * IMAGE_HEIGHT
+def unflatten_face(flattened_face):
+    ''' reshape a (1024) vector into a (32,32) image
+    '''
+    return np.reshape(flattened_face, (flattened_face.shape[0] / IMAGE_WIDTH, IMAGE_WIDTH))
+
 def debug(*args):
     if DEBUG:
         # using sys.stdout to make it work independent of python version
@@ -37,7 +50,7 @@ def showall(imgs):
         axes.get_yaxis().set_visible(False)
         imgplt = plt.imshow(img, cmap=cm.Greys_r)
         imgplt.set_interpolation('nearest')
-        plt.title(str(i+1))
+        #plt.title(str(i+1))
     plt.show()
 
 def showall_flattened(imgs_flat):

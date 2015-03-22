@@ -60,6 +60,7 @@ def build_results_table(comps, gendermap):
             ])
 
         matches = avg(vals[- len(comps[k].keys()) + 1:])
+        gender_matches = avg(vals[- len(comps[k].keys()) + 1:])
         restab.append([
             "", "(avg)",
             "{:.2f}".format(matches),
