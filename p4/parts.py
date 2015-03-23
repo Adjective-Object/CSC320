@@ -1,35 +1,55 @@
 from scipy.misc import imread
 import numpy as np
 from numpy.linalg import pinv
+from p4 import debug
 
 EPSILON = 0.0001
 
 def matting(b1, b2, c1, c2):
+    height, width = b1.shape[0:2]
+    result = np.empty((height, width, 4))
+
+    bkgcolours = np.reshape(
+        np.concatenate((b1,b2), 2),
+        (height, width, 6, 1))
+
+    diffs = np.reshape(
+        np.concatenate((c1-b1, c2-b2), 2),
+        (height, width, 6, 1))
+
+    # should it be repeat or tile??
+    #double_identity_3 = np.repeat(np.identity(3), 2, axis = 0)
+    double_identity_3 = np.tile(np.identity(3), (2,1))
+    debug(double_identity_3)
+
+    # construct As (the concatenation of 2 identities and vg_values)
+    many_identities = np.reshape(double_identity_3, ((1,1,6,3)))
+    many_identities = np.tile(many_identities, (height, width, 1, 1))
+    
+    As = np.concatenate((many_identities, bkgcolours), axis=3)
+    Apinv = np.empty((height, width, 4, 6))
 
     # value names correspond to matrices in Part 1 of the project handout
-    result = np.empty((b1.shape[0], b1.shape[1], 4))
-
     for y, x in np.ndindex(b1.shape[0], b1.shape[1]):
+        # debug(As[y,x], "A")
+        # debug(diffs[y,x], "diffs")
+        
+        Apinv[y,x] = pinv(As[y,x])
+        # debug(Apinv[y,x], "A+")
 
-        def rgb(array):
-            return array[y, x, :]
+        result[y,x] = np.reshape(
+            np.dot(Apinv[y,x], diffs[y,x]),
+            (4))
 
-        br1, bg1, bb1 = rgb(b1)
-        br2, bg2, bb2 = rgb(b2)
+    return np.clip(-result, 0, 1) * 255
 
-        # I would ideally want to use np.concatenate here to combine b1 and b2 
-        # into a single column vector, but it creates an array of values as 
-        # opposed to a vector, and converting it didn't seem easy
-        bg_values = np.array([[br1], [bg1], [bb1], [br2], [bg2], [bb2]])
+class P0(object):
+    def __init__(self, imgs):
+        self.matte = imread("results/saved_matte.png")
 
-        A = np.concatenate([np.repeat(np.identity(3), 2, axis = 0), bg_values], axis = 1)
-        Aplus = pinv(A)
-        b = np.concatenate([rgb(c1) - rgb(b1), rgb(c2) - rgb(b2)])
+    def execute(self):
+        pass
 
-        # TODO: post-processing
-        result[y, x, :] = Aplus.dot(b)
-
-    return np.where(np.clip(result, 0, 1) > EPSILON, 0, 1)
 
 class P1(object):
     def __init__(self, (background_a, composition_a, background_b, composition_b)):
@@ -45,6 +65,7 @@ class P1(object):
         c2 = imread(self.composition_b) / 255.0
 
         matted_image = matting(b1, b2, c1, c2)
+
         return matted_image
 
 class P2(P1):

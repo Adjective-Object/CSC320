@@ -4,15 +4,13 @@
 ## Handout painting code.
 ###########################################################################
 
-import time
-import getopt
-import sys
+import getopt, sys, os
 
 from scipy.misc import imresize, imsave
 from PIL import Image
 import numpy as np
 
-from parts import P1, P2
+from parts import *
 
 DEBUG = True
 def debug(*args):
@@ -44,30 +42,37 @@ def print_helptext():
     debug("         --prefix <prefix_fname>")
     debug("             sets back_a comp_a back_b com_b to ")
     debug("             '<prefix_fname>-backA.jpg', <prefix_fname>-compA.jpg, etc")
+    debug("         --extension <extension>")
+    debug("             changes the file extension used in --prefix")
+    debug("             defaults to jpg")
     debug("         --silent")
     debug("             suppresses debug messages. defaults to debug messages on")
 
 def parse_opts():
     options, remaining_args = getopt.getopt(
         sys.argv[1:],
-        'ohbs:p:',
-        ['out=', 'help=', 'silent=', 'background=', 'prefix=']
+        'o:hbs:p:e:',
+        ['out=', 'help=', 'silent=', 'background=', 'prefix=', 'extension']
     )
 
     out_background = None
     prefix = None
+    suffix = "jpg"
     out_name = 'results/out.png'
 
     for opt, arg in options:
 
         if opt in ('-o', '--out'):
-            image_name = arg
+            out_name = arg
 
         elif opt in ('-b', '--background'):
             opt_background = arg
 
         elif opt in ('-p', '--prefix'):
             prefix = arg
+
+        elif opt in ('-e', '--extension'):
+            suffix = arg
 
         elif opt in ('-h', '--help'):
             print_helptext()
@@ -86,12 +91,25 @@ def parse_opts():
         debug("%s --help for more info"%(sys.argv[0]))
         sys.exit(1)
 
-    return (out_background, out_name, 
-            (remaining_args if prefix is None else 
-                [prefix+"-backA.jpg",
-                 prefix+"-compA.jpg",
-                 prefix+"-backB.jpg",
-                 prefix+"-compB.jpg"]))
+    return (out_background, out_name,
+            (remaining_args if prefix is None else
+                [prefix+"-backA."+suffix,
+                 prefix+"-compA."+suffix,
+                 prefix+"-backB."+suffix,
+                 prefix+"-compB."+suffix]))
+
+def make_folder_for(path):
+    """ Traverse path, creating folders if they do not exist """
+
+    traversal_path = path.split("/")[0]
+    if traversal_path == "":
+        traversal_path = "/"
+
+    for folder in path.split("/")[1:]:
+        if not os.path.exists(traversal_path):
+            os.mkdir(traversal_path)
+
+        traversal_path = traversal_path + "/" + folder
 
 def main():
     out_background, out_name, image_names = parse_opts()
@@ -104,7 +122,9 @@ def main():
         part = P1(image_names)
 
     out_img = part.execute()
-    debug((out_img.min(), out_img.max()))
+    debug("out_image min:", out_img.min(), "out_image max:", out_img.max())
+
+    make_folder_for(out_name)
     imsave(out_name, out_img)
 
 if __name__ == "__main__":
