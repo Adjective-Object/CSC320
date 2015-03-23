@@ -3,9 +3,9 @@ import numpy as np
 from numpy.linalg import pinv
 from p4 import debug
 
-EPSILON = 0.0001
-
 def matting(b1, b2, c1, c2):
+    debug("starting range", np.min([b1, b2, c1, c2]), np.max([b1, b2, c1, c2]))
+
     height, width = b1.shape[0:2]
     result = np.empty((height, width, 4))
 
@@ -20,7 +20,6 @@ def matting(b1, b2, c1, c2):
     # should it be repeat or tile??
     #double_identity_3 = np.repeat(np.identity(3), 2, axis = 0)
     double_identity_3 = np.tile(np.identity(3), (2,1))
-    debug(double_identity_3)
 
     # construct As (the concatenation of 2 identities and vg_values)
     many_identities = np.reshape(double_identity_3, ((1,1,6,3)))
@@ -41,15 +40,25 @@ def matting(b1, b2, c1, c2):
             np.dot(Apinv[y,x], diffs[y,x]),
             (4))
 
-    return np.clip(-result, 0, 1) * 255
+    #invert the alpha channel on the matte
+    result[:,:,3] = -result[:,:,3]
+    return np.clip(result, 0, 1);
 
-class P0(object):
-    def __init__(self, imgs):
-        self.matte = imread("results/saved_matte.png")
+def threshold_falloff(
+        image,
+        THRESHOLD=0.5,
+        THRESHOLD_FALLOFF=0.5):
 
-    def execute(self):
-        pass
 
+    # center around threshold and scale down, then reset offset
+    falloff = (image[:,:,3] - THRESHOLD) / THRESHOLD_FALLOFF + THRESHOLD
+    out = np.array(image, copy=True)
+
+    # use the alpha value of the mask to choose between mask or threshold mask
+    # all colours just for indicator of threshold mask versus mask mask
+    image[:,:,3] = np.where(image[:,:,3] < THRESHOLD, image[:,:,3], falloff)
+
+    return out;
 
 class P1(object):
     def __init__(self, (background_a, composition_a, background_b, composition_b)):
@@ -66,7 +75,7 @@ class P1(object):
 
         matted_image = matting(b1, b2, c1, c2)
 
-        return matted_image
+        return threshold_falloff(matted_image) * 255
 
 class P2(P1):
     def __init__(self, imgs, background):
