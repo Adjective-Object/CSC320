@@ -33,6 +33,9 @@ def print_helptext():
     debug("     <back_b> is the background of image b")
     debug("     <comp_b> is the composite of the object against background b")
     debug("     [options] of")
+    debug("         --mask")
+    debug("             create a mask image instead of the alpha matted image.")
+    debug("             incompatible with --background")
     debug("         --background <background>")
     debug("             The new background to composite the foreground against")
     debug("             If not specified, this will output an alpha image")
@@ -51,12 +54,13 @@ def print_helptext():
 def parse_opts():
     options, remaining_args = getopt.getopt(
         sys.argv[1:],
-        'o:hbs:p:e:',
-        ['out=', 'help=', 'silent=', 'background=', 'prefix=', 'extension']
+        'o:hb:s:p:e:m',
+        ['out=', 'help=', 'silent=', 'background=', 'prefix=', 'extension', 'mask']
     )
 
     out_background = None
     prefix = None
+    mask = False
     suffix = "jpg"
     out_name = 'results/out.png'
 
@@ -66,7 +70,7 @@ def parse_opts():
             out_name = arg
 
         elif opt in ('-b', '--background'):
-            opt_background = arg
+            out_background = arg
 
         elif opt in ('-p', '--prefix'):
             prefix = arg
@@ -78,20 +82,28 @@ def parse_opts():
             print_helptext()
             exit(0);
 
+        elif opt in ('-m', '--mask'):
+            mask = True
+
         elif opt in ('-s', '--silent'):
             global DEBUG
             DEBUG = False
         else:
-            debug("unrecognized option/argument pair '%s', '%s'" % (opt, arg))
-            debug("%s --help for more info"%(sys.argv[0]))
+            print("unrecognized option/argument pair '%s', '%s'" % (opt, arg))
+            print("%s --help for more info"%(sys.argv[0]))
             sys.exit(1)
 
     if not prefix and len(remaining_args) < 4:
-        debug("lacking one of <back_a> <comp_a> <back_b> <comp_b>")
-        debug("%s --help for more info"%(sys.argv[0]))
+        print("lacking one of <back_a> <comp_a> <back_b> <comp_b>")
+        print("%s --help for more info"%(sys.argv[0]))
         sys.exit(1)
 
-    return (out_background, out_name,
+    if mask and out_background:
+        print("--mask and --background incompatible args")
+        print("%s --help for more info"%(sys.argv[0]))
+        sys.exit(1)
+
+    return (mask, out_background, out_name,
             (remaining_args if prefix is None else
                 [prefix+"-backA."+suffix,
                  prefix+"-compA."+suffix,
@@ -112,14 +124,14 @@ def make_folder_for(path):
         traversal_path = traversal_path + "/" + folder
 
 def main():
-    out_background, out_name, image_names = parse_opts()
+    mask, out_background, out_name, image_names = parse_opts()
 
     debug("parsing into", out_name, "\n\t"+"\n\t".join(image_names) )
 
     if out_background:
         part = P2(image_names, out_background)
     else:
-        part = P1(image_names)
+        part = P1(image_names, mask)
 
     out_img = part.execute()
     debug("out_image min:", out_img.min(), "out_image max:", out_img.max())
