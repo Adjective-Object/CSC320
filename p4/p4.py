@@ -55,7 +55,7 @@ def parse_opts():
     options, remaining_args = getopt.getopt(
         sys.argv[1:],
         'o:hb:s:p:e:m',
-        ['out=', 'help=', 'silent=', 'background=', 'prefix=', 'extension', 'mask']
+        ['out=', 'help', 'silent=', 'background=', 'prefix=', 'extension', 'mask']
     )
 
     out_background = None

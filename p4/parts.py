@@ -1,6 +1,7 @@
 from scipy.misc import imread
 import numpy as np
 from numpy.linalg import pinv
+from scipy.ndimage.filters import median_filter
 from p4 import debug
 
 def matting(b1, b2, c1, c2):
@@ -48,18 +49,22 @@ def matting(b1, b2, c1, c2):
 
 def threshold_falloff(
         image,
-        THRESHOLD=0.5,
-        THRESHOLD_FALLOFF=0.5):
+        THRESHOLD=0.2,
+        THRESHOLD_FALLOFF=0.2,
+        DIFF_THRESHOLD=0.3):
     debug("applying thresholding effect")
 
 
     # center around threshold and scale down, then reset offset
-    falloff = (image[:,:,3] - THRESHOLD) / THRESHOLD_FALLOFF + THRESHOLD
-    out = np.array(image, copy=True)
+    falloff = (np.copy(image[:,:,3]) - THRESHOLD) * THRESHOLD_FALLOFF + THRESHOLD
 
     # use the alpha value of the mask to choose between mask or threshold mask
     # all colours just for indicator of threshold mask versus mask mask
-    image[:,:,3] = np.where(image[:,:,3] < THRESHOLD, image[:,:,3], falloff)
+    thresh = np.where(image[:,:,3] < THRESHOLD, falloff, image[:,:,3])
+    gauss = median_filter(thresh, size=3)
+    out = np.array(image, copy=True)
+    diff = np.abs(gauss - thresh)
+    out[:,:,3] = np.where( diff < DIFF_THRESHOLD, gauss, thresh);
 
     return out;
 
