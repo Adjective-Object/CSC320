@@ -43,7 +43,7 @@ def matting(b1, b2, c1, c2):
             (4))
     debug("    end pinv & dot product")
 
-    #invert the alpha channel on the matte
+    # invert the alpha channel on the matte
     result[:,:,3] = -result[:,:,3]
     return np.clip(result, 0, 1);
 
